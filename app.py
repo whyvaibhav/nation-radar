@@ -19,7 +19,7 @@ CORS(app)
 VPS_API_URL = os.environ.get('VPS_API_URL', 'http://143.198.226.161:5001')
 
 # Get the absolute path to the frontend directory
-FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'out')
+FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))  # Root directory
 
 @app.route('/debug')
 def debug_info():
