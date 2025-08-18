@@ -3,331 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nation Radar - Crestal Network Intelligence Hub</title>
+    <title>Nation Radar - Crestal Network Intelligence</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Animated Background -->
-    <div class="animated-background">
-        <div class="floating-shapes">
-            <div class="shape shape-1"></div>
-            <div class="shape shape-2"></div>
-            <div class="shape shape-3"></div>
-            <div class="shape shape-4"></div>
-        </div>
-    </div>
-
     <div class="container">
-        <!-- Enhanced Header -->
-        <header class="header glass-effect">
-            <div class="header-content">
-                <div class="logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-radar"></i>
-                        <div class="pulse-ring"></div>
-                    </div>
-                    <div class="logo-text">
-                        <h1>NATION RADAR</h1>
-                        <span class="subtitle">Crestal Network Intelligence Hub</span>
-                    </div>
+        <!-- Clean Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-radar"></i>
                 </div>
-                
-                <div class="header-controls">
-                    <div class="status-indicator">
-                        <div class="status-dot active"></div>
-                        <span>Live Monitoring</span>
-                    </div>
-                    <button class="theme-toggle" id="theme-toggle">
-                        <i class="fas fa-moon"></i>
-                    </button>
+                <div class="logo-text">
+                    <h1>NATION RADAR</h1>
+                    <span class="subtitle">Crestal Network Intelligence</span>
                 </div>
+            </div>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Live Monitoring</span>
             </div>
         </header>
 
-        <!-- Hero Section with Enhanced Stats -->
-        <section class="hero glass-effect">
+        <!-- Hero Section -->
+        <section class="hero">
             <div class="hero-content">
-                <div class="hero-text">
-                    <h2>Discover the Pulse of <span class="gradient-text">Crestal Network</span></h2>
-                    <p>Real-time AI-powered insights into community sentiment, content quality, and ecosystem growth. Monitor the pulse of the future.</p>
-                </div>
+                <h2>Monitor the Pulse of <span class="accent-text">Crestal Network</span></h2>
+                <p>Real-time AI-powered insights into community sentiment and content quality</p>
                 
-                <div class="hero-stats">
-                    <div class="stat-card glass-effect">
+                <div class="stats-grid">
+                    <div class="stat-card">
                         <div class="stat-icon">
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="stat-content">
                             <span class="stat-number" id="total-users">-</span>
-                            <span class="stat-label">Active Community</span>
-                        </div>
-                        <div class="stat-trend positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>12%</span>
+                            <span class="stat-label">Total Tweets</span>
                         </div>
                     </div>
                     
-                    <div class="stat-card glass-effect">
+                    <div class="stat-card">
                         <div class="stat-icon">
-                            <i class="fas fa-brain"></i>
+                            <i class="fas fa-star"></i>
                         </div>
                         <div class="stat-content">
                             <span class="stat-number" id="avg-score">-</span>
-                            <span class="stat-label">Quality Score</span>
-                        </div>
-                        <div class="stat-trend positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>8%</span>
+                            <span class="stat-label">Avg Score</span>
                         </div>
                     </div>
                     
-                    <div class="stat-card glass-effect">
+                    <div class="stat-card">
                         <div class="stat-icon">
                             <i class="fas fa-chart-line"></i>
                         </div>
                         <div class="stat-content">
                             <span class="stat-number" id="total-content">-</span>
-                            <span class="stat-label">Content Analyzed</span>
-                        </div>
-                        <div class="stat-trend positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>24%</span>
+                            <span class="stat-label">Analyzed</span>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Main Dashboard Grid -->
-        <main class="dashboard-grid">
-            <!-- Trending Content with Enhanced Cards -->
-            <section class="dashboard-section trending-section">
+        <!-- Main Dashboard -->
+        <main class="dashboard">
+            <!-- Trending Content -->
+            <section class="dashboard-section">
                 <div class="section-header">
                     <h3><i class="fas fa-fire"></i> Trending Content</h3>
                     <p>Top-performing content from the Crestal ecosystem</p>
-                    <div class="section-controls">
-                        <button class="filter-btn active" data-filter="all">All</button>
-                        <button class="filter-btn" data-filter="high-score">High Score</button>
-                        <button class="filter-btn" data-filter="high-engagement">High Engagement</button>
-                    </div>
                 </div>
                 <div class="content-grid" id="trending-content">
-                    <!-- Enhanced content cards will be populated here -->
+                    <!-- Content cards will be populated here -->
                 </div>
             </section>
 
-            <!-- Analytics Dashboard -->
-            <section class="dashboard-section analytics-section">
-                <div class="section-header">
-                    <h3><i class="fas fa-chart-area"></i> Analytics Dashboard</h3>
-                    <p>Real-time metrics and performance insights</p>
-                </div>
-                <div class="analytics-grid">
-                    <div class="chart-container glass-effect">
-                        <h4>Content Quality Distribution</h4>
-                        <canvas id="quality-chart"></canvas>
-                    </div>
-                    <div class="chart-container glass-effect">
-                        <h4>Engagement Trends</h4>
-                        <canvas id="engagement-chart"></canvas>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Community Insights with Enhanced Cards -->
-            <section class="dashboard-section insights-section">
-                <div class="section-header">
-                    <h3><i class="fas fa-chart-pie"></i> Community Insights</h3>
-                    <p>Deep analysis of community engagement and sentiment</p>
-                </div>
-                <div class="insights-grid">
-                    <div class="insight-card glass-effect">
-                        <div class="insight-header">
-                            <div class="insight-icon quality">
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <div class="insight-badge">Live</div>
-                        </div>
-                        <div class="insight-content">
-                            <h4>Content Quality</h4>
-                            <div class="insight-metric">
-                                <span class="metric-value" id="quality-metric">-</span>
-                                <span class="metric-label">Average Score</span>
-                            </div>
-                            <div class="insight-trend positive">
-                                <i class="fas fa-arrow-up"></i>
-                                <span id="quality-trend">-</span>
-                            </div>
-                        </div>
-                        <div class="insight-chart">
-                            <canvas id="quality-mini-chart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="insight-card glass-effect">
-                        <div class="insight-header">
-                            <div class="insight-icon engagement">
-                                <i class="fas fa-heart"></i>
-                            </div>
-                            <div class="insight-badge">Live</div>
-                        </div>
-                        <div class="insight-content">
-                            <h4>Engagement Rate</h4>
-                            <div class="insight-metric">
-                                <span class="metric-value" id="engagement-metric">-</span>
-                                <span class="metric-label">Avg. Engagement</span>
-                            </div>
-                            <div class="insight-trend positive">
-                                <i class="fas fa-arrow-up"></i>
-                                <span id="engagement-trend">-</span>
-                            </div>
-                        </div>
-                        <div class="insight-chart">
-                            <canvas id="engagement-mini-chart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="insight-card glass-effect">
-                        <div class="insight-header">
-                            <div class="insight-icon activity">
-                                <i class="fas fa-activity"></i>
-                            </div>
-                            <div class="insight-badge">Live</div>
-                        </div>
-                        <div class="insight-content">
-                            <h4>Community Activity</h4>
-                            <div class="insight-metric">
-                                <span class="metric-value" id="activity-metric">-</span>
-                                <span class="metric-label">Active Contributors</span>
-                            </div>
-                            <div class="insight-trend positive">
-                                <i class="fas fa-arrow-up"></i>
-                                <span id="activity-trend">-</span>
-                            </div>
-                        </div>
-                        <div class="insight-chart">
-                            <canvas id="activity-mini-chart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Enhanced Leaderboard -->
-            <section class="dashboard-section leaderboard-section">
+            <!-- Leaderboard -->
+            <section class="dashboard-section">
                 <div class="section-header">
                     <h3><i class="fas fa-trophy"></i> Top Contributors</h3>
                     <p>Community leaders driving quality content</p>
-                    <div class="leaderboard-tabs">
-                        <button class="tab-btn active" data-tab="score">By Score</button>
-                        <button class="tab-btn" data-tab="engagement">By Engagement</button>
-                        <button class="tab-btn" data-tab="activity">By Activity</button>
-                    </div>
                 </div>
-                <div class="leaderboard-container glass-effect">
-                    <div class="leaderboard" id="leaderboard">
-                        <!-- Enhanced leaderboard will be populated here -->
-                    </div>
+                <div class="leaderboard" id="leaderboard">
+                    <!-- Leaderboard will be populated here -->
                 </div>
             </section>
 
-            <!-- Real-time Activity Feed -->
-            <section class="dashboard-section activity-section">
+            <!-- Recent Activity -->
+            <section class="dashboard-section">
                 <div class="section-header">
-                    <h3><i class="fas fa-clock"></i> Real-time Activity</h3>
-                    <p>Live community updates and content flow</p>
-                    <div class="activity-controls">
-                        <button class="refresh-btn" id="refresh-activity">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
+                    <h3><i class="fas fa-clock"></i> Recent Activity</h3>
+                    <p>Latest community updates and content flow</p>
                 </div>
-                <div class="activity-container glass-effect">
-                    <div class="activity-feed" id="activity-feed">
-                        <!-- Enhanced activity items will be populated here -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Advanced Search & Discovery -->
-            <section class="dashboard-section search-section">
-                <div class="section-header">
-                    <h3><i class="fas fa-search"></i> Content Discovery</h3>
-                    <p>Find specific content and analyze trends</p>
-                </div>
-                <div class="search-container glass-effect">
-                    <div class="search-box">
-                        <input type="text" id="search-input" placeholder="Search for content, users, or keywords...">
-                        <button class="search-btn">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                    <div class="search-filters">
-                        <select id="score-filter">
-                            <option value="">All Scores</option>
-                            <option value="high">High Quality (0.8+)</option>
-                            <option value="medium">Medium Quality (0.4-0.8)</option>
-                            <option value="low">Low Quality (0.0-0.4)</option>
-                        </select>
-                        <select id="time-filter">
-                            <option value="">All Time</option>
-                            <option value="1h">Last Hour</option>
-                            <option value="24h">Last 24 Hours</option>
-                            <option value="7d">Last 7 Days</option>
-                        </select>
-                    </div>
-                    <div class="search-results" id="search-results">
-                        <!-- Search results will appear here -->
-                    </div>
+                <div class="activity-feed" id="activity-feed">
+                    <!-- Activity items will be populated here -->
                 </div>
             </section>
         </main>
 
-        <!-- Enhanced Footer -->
-        <footer class="footer glass-effect">
+        <!-- Clean Footer -->
+        <footer class="footer">
             <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Nation Radar</h4>
-                    <p>Powered by Crestal Network AI</p>
-                </div>
-                <div class="footer-section">
-                    <h4>System Status</h4>
-                    <div class="status-info">
-                        <span>VPS: <span class="status-dot active"></span> Connected</span>
-                        <span>Last Updated: <span id="last-update">-</span></span>
-                    </div>
-                </div>
-                <div class="footer-section">
-                    <h4>Quick Stats</h4>
-                    <div class="footer-stats">
-                        <span>API Calls: <span id="api-calls">-</span></span>
-                        <span>Response Time: <span id="response-time">-</span>ms</span>
-                    </div>
+                <p>&copy; 2024 Nation Radar. Powered by Crestal Network AI.</p>
+                <div class="footer-info">
+                    <span>Last updated: <span id="last-update">-</span></span>
+                    <span>VPS Status: <span class="status-dot"></span> Connected</span>
                 </div>
             </div>
         </footer>
     </div>
 
-    <!-- Enhanced Loading Overlay -->
+    <!-- Simple Loading Overlay -->
     <div class="loading-overlay" id="loading-overlay">
-        <div class="loading-content glass-effect">
+        <div class="loading-content">
             <div class="loading-spinner">
-                <div class="radar-scan"></div>
-                <i class="fas fa-radar"></i>
+                <i class="fas fa-radar fa-spin"></i>
             </div>
-            <h3>Analyzing Crestal Network...</h3>
-            <p>Gathering real-time intelligence data</p>
-            <div class="loading-progress">
-                <div class="progress-bar" id="loading-progress"></div>
-            </div>
+            <h3>Loading Nation Radar...</h3>
         </div>
-    </div>
-
-    <!-- Notification System -->
-    <div class="notification-container" id="notification-container">
-        <!-- Notifications will appear here -->
     </div>
 
     <script src="script.js"></script>
