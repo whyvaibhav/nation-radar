@@ -18,15 +18,60 @@ CORS(app)
 # Configuration
 VPS_API_URL = os.environ.get('VPS_API_URL', 'http://143.198.226.161:5001')
 
+# Get the absolute path to the frontend directory
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'out')
+
+@app.route('/debug')
+def debug_info():
+    """Debug endpoint to check file paths and structure"""
+    try:
+        current_dir = os.getcwd()
+        app_dir = os.path.dirname(os.path.abspath(__file__))
+        frontend_exists = os.path.exists(FRONTEND_DIR)
+        index_exists = os.path.exists(os.path.join(FRONTEND_DIR, 'index.html')) if frontend_exists else False
+        
+        debug_info = {
+            "current_working_directory": current_dir,
+            "app_directory": app_dir,
+            "frontend_dir_path": FRONTEND_DIR,
+            "frontend_dir_exists": frontend_exists,
+            "index_html_exists": index_exists,
+            "directory_contents": os.listdir(app_dir) if os.path.exists(app_dir) else [],
+            "frontend_contents": os.listdir(FRONTEND_DIR) if frontend_exists else []
+        }
+        
+        return jsonify(debug_info)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/')
 def serve_frontend():
     """Serve the main dashboard"""
-    return send_from_directory('frontend', 'index.html')
+    try:
+        # Check if the directory exists
+        if not os.path.exists(FRONTEND_DIR):
+            return f"Frontend directory not found: {FRONTEND_DIR}", 500
+        
+        # Check if index.html exists
+        index_path = os.path.join(FRONTEND_DIR, 'index.html')
+        if not os.path.exists(index_path):
+            return f"index.html not found in: {FRONTEND_DIR}", 500
+            
+        return send_from_directory(FRONTEND_DIR, 'index.html')
+    except Exception as e:
+        return f"Error serving frontend: {str(e)}", 500
 
 @app.route('/<path:path>')
 def serve_static(path):
     """Serve static assets"""
-    return send_from_directory('frontend', path)
+    try:
+        # Check if the directory exists
+        if not os.path.exists(FRONTEND_DIR):
+            return f"Frontend directory not found: {FRONTEND_DIR}", 500
+            
+        return send_from_directory(FRONTEND_DIR, path)
+    except Exception as e:
+        return f"Error serving static file {path}: {str(e)}", 500
 
 # API Endpoints
 @app.route('/api/crestal-data')
