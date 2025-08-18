@@ -31,7 +31,7 @@ class RyanTwitterFetcher:
         querystring = {
             "query": keyword,
             "type": "Latest",  # Required parameter
-            "limit": "20"
+            "limit": "15"  # Optimized for 500/month API quota
         }
         
         try:
@@ -100,15 +100,20 @@ class RyanTwitterFetcher:
                                         "engagement": engagement
                                     }
                                     
-                                    tweets.append(tweet)
+                                    if tweet['id'] and tweet['text']:
+                                        tweets.append(tweet)
+                                        
                     except Exception as e:
                         print(f"Error parsing tweet: {e}")
                         continue
                         
+            elif response.status_code == 429:
+                print(f"Rate limited for keyword '{keyword}'; backing off 5s")
+                time.sleep(5)
             else:
                 print(f"API Error: {response.status_code} - {response.text}")
                 
         except Exception as e:
-            print(f"Error fetching tweets for {keyword}: {e}")
+            print(f"Error fetching tweets for keyword '{keyword}': {e}")
             
         return tweets 

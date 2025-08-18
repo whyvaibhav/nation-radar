@@ -31,7 +31,7 @@ def serve_static(path):
 # API Endpoints
 @app.route('/api/crestal-data')
 def get_crestal_data():
-    """Get latest Crestal-related data from VPS API"""
+    """Get latest Crestal-related data from VPS API (which reads from tweets.db)"""
     try:
         import requests
         
@@ -51,7 +51,7 @@ def get_crestal_data():
 
 @app.route('/api/leaderboard')
 def get_leaderboard():
-    """Get top tweets by score from VPS API"""
+    """Get top tweets by score from VPS API (which reads from tweets.db)"""
     try:
         import requests
         
@@ -71,7 +71,7 @@ def get_leaderboard():
 
 @app.route('/api/system-status')
 def get_system_status():
-    """Get system status and statistics from VPS API"""
+    """Get system status and statistics from VPS API (which reads from tweets.db)"""
     try:
         import requests
         
@@ -100,7 +100,7 @@ def get_system_status():
 
 @app.route('/api/search')
 def search_tweets():
-    """Search tweets by keyword via VPS API"""
+    """Search tweets by keyword via VPS API (which reads from tweets.db)"""
     try:
         query = request.args.get('q', '').strip()
         if not query:

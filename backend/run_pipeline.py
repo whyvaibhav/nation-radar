@@ -102,9 +102,9 @@ def fetch_tweet_engagement(tweet_id):
                 "quote_tweets": 0
             }
             
-            if isinstance(data, dict):
-                # Try different field names
-                engagement['likes'] = int(data.get('favorite_count', data.get('likes', 0)))
+            # Try to extract from various response structures
+            try:
+                engagement['likes'] = int(data.get('like_count', data.get('likes', 0)))
                 engagement['retweets'] = int(data.get('retweet_count', data.get('retweets', 0)))
                 engagement['replies'] = int(data.get('reply_count', data.get('replies', 0)))
                 # Views / impressions can be present under different keys
@@ -132,6 +132,9 @@ def fetch_tweet_engagement(tweet_id):
                     engagement['retweets'] = int(metrics.get('retweet_count', engagement['retweets']))
                     engagement['replies'] = int(metrics.get('reply_count', engagement['replies']))
                     engagement['quote_tweets'] = int(metrics.get('quote_count', engagement['quote_tweets']))
+            except Exception as e:
+                print(f"Error parsing engagement data: {e}")
+                pass
             
             return engagement if engagement_has_signal(engagement) else None
             
@@ -146,6 +149,10 @@ def fetch_tweet_engagement(tweet_id):
 
 def main():
     print(f"Loading config: keywords={KEYWORDS}, days_lookback={DAYS_LOOKBACK}, csv={CSV_FILENAME}")
+    print("🚀 Starting Nation Radar Pipeline - Weekly Collection Mode")
+    print("📊 API Quota: 500 requests/month | Collection: 6 keywords × 5 tweets = 30 tweets per run")
+    print("⏰ Frequency: Weekly (every 7 days) | Monthly API usage: ~360 requests")
+    
     fetcher = RyanTwitterFetcher(days_lookback=DAYS_LOOKBACK)
     # Use SQLite for scalable dedup; still write CSV for human-readable export
     db_storage = SQLiteStorage(db_path="tweets.db")
@@ -153,6 +160,7 @@ def main():
     seen_ids = set()
     seen_hashes = load_seen_hashes()
     all_results = []
+    
     for keyword in KEYWORDS:
         print(f"Fetching tweets for keyword: {keyword}")
         tweets = fetcher.fetch(keyword)
@@ -164,7 +172,7 @@ def main():
             if keyword == "$NATION":
                 if not contains_ticker(tweet['text'], "NATION"):
                     continue  # Skip tweets that don't have $NATION exactly
-            if count >= 4:
+            if count >= 5:  # Process 5 tweets per keyword (optimized for weekly collection)
                 break
             tweet_id = tweet.get('id')
             if not tweet_id or tweet_id in seen_ids:
@@ -195,13 +203,21 @@ def main():
             count += 1
             # Mark this content as seen so future reposts won't be scored again
             seen_hashes.add(content_hash)
+    
     # Persist seen hashes across runs
     save_seen_hashes(seen_hashes)
-    print(f"\nPipeline complete. {len(all_results)} unique tweets processed.")
+    
+    print(f"\n🎯 Pipeline complete. {len(all_results)} unique tweets processed.")
+    print(f"📈 Collection Summary:")
+    print(f"   • Keywords processed: {len(KEYWORDS)}")
+    print(f"   • Tweets collected: {len(all_results)}")
+    print(f"   • API usage: ~{len(KEYWORDS) * 15} requests")
+    print(f"   • Next run: Weekly (every 7 days)")
+    
     if all_results:
-        print("Top 5 by score:")
+        print("\n🏆 Top 5 by score:")
         for username, score, tweet_id in sorted(all_results, key=lambda x: -x[1])[:5]:
-            print(f"@{username}: {score} (ID: {tweet_id})")
+            print(f"   @{username}: {score} (ID: {tweet_id})")
 
 if __name__ == "__main__":
     main()
