@@ -4,47 +4,38 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Heart, MessageCircle, Repeat2, Share, TrendingUp } from "lucide-react"
 import { useState, useEffect } from "react"
+import { Tweet } from "@/lib/api"
 
-export function TrendingContent() {
+interface TrendingContentProps {
+  tweets: Tweet[]
+}
+
+export function TrendingContent({ tweets }: TrendingContentProps) {
   const [visibleTweets, setVisibleTweets] = useState<number[]>([])
-  const [hoveredTweet, setHoveredTweet] = useState<number | null>(null)
 
-  const trendingTweets = [
+  // Use real tweets if available, otherwise show demo data
+  const trendingTweets = tweets.length > 0 ? tweets.slice(0, 3).map((tweet, index) => ({
+    id: tweet.id,
+    author: `@${tweet.username}`,
+    content: tweet.text.length > 100 ? tweet.text.substring(0, 100) + '...' : tweet.text,
+    score: tweet.score,
+    likes: tweet.engagement.likes,
+    retweets: tweet.engagement.retweets,
+    replies: tweet.engagement.replies,
+    timestamp: formatTime(tweet.created_at),
+    sentiment: getSentimentFromScore(tweet.score),
+  })) : [
     {
       id: 1,
       author: "@techinfluencer",
-      content:
-        "The future of AI is here and it's transforming how we interact with technology. Exciting times ahead! 🚀",
-      score: 9.2,
-      likes: 1247,
-      retweets: 342,
-      replies: 89,
-      timestamp: "2h ago",
-      sentiment: "positive",
-    },
-    {
-      id: 2,
-      author: "@cryptoexpert",
-      content:
-        "Market analysis shows interesting patterns emerging. The next few weeks will be crucial for the industry.",
-      score: 8.7,
-      likes: 892,
-      retweets: 156,
-      replies: 67,
-      timestamp: "4h ago",
+      content: "Loading real data from Nation Radar backend...",
+      score: 0,
+      likes: 0,
+      retweets: 0,
+      replies: 0,
+      timestamp: "Loading...",
       sentiment: "neutral",
-    },
-    {
-      id: 3,
-      author: "@startupfounder",
-      content: "Just closed our Series A! Grateful for the amazing team and investors who believed in our vision. 💪",
-      score: 9.5,
-      likes: 2341,
-      retweets: 567,
-      replies: 123,
-      timestamp: "6h ago",
-      sentiment: "positive",
-    },
+    }
   ]
 
   useEffect(() => {
@@ -53,7 +44,7 @@ export function TrendingContent() {
         setVisibleTweets((prev) => [...prev, tweet.id])
       }, index * 200)
     })
-  }, [])
+  }, [trendingTweets])
 
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
@@ -64,6 +55,32 @@ export function TrendingContent() {
       default:
         return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
     }
+  }
+
+  const formatTime = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp)
+      const now = new Date()
+      const diffMs = now.getTime() - date.getTime()
+      const diffMins = Math.floor(diffMs / 60000)
+      const diffHours = Math.floor(diffMs / 3600000)
+      const diffDays = Math.floor(diffMs / 86400000)
+      
+      if (diffMins < 1) return 'Just now'
+      if (diffMins < 60) return `${diffMins}m ago`
+      if (diffHours < 24) return `${diffHours}h ago`
+      if (diffDays < 7) return `${diffDays}d ago`
+      
+      return date.toLocaleDateString()
+    } catch {
+      return 'Unknown'
+    }
+  }
+
+  const getSentimentFromScore = (score: number) => {
+    if (score >= 7) return "positive"
+    if (score <= 3) return "negative"
+    return "neutral"
   }
 
   return (
@@ -80,9 +97,7 @@ export function TrendingContent() {
             key={tweet.id}
             className={`p-5 bg-secondary rounded-lg border border-border transition-all duration-500 hover:scale-[1.02] hover:shadow-md hover:border-primary/30 cursor-pointer transform ${
               visibleTweets.includes(tweet.id) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            } ${hoveredTweet === tweet.id ? "bg-secondary/80" : ""}`}
-            onMouseEnter={() => setHoveredTweet(tweet.id)}
-            onMouseLeave={() => setHoveredTweet(null)}
+            }`}
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
@@ -93,57 +108,37 @@ export function TrendingContent() {
               </div>
               <div className="flex items-center space-x-3">
                 <Badge
-                  className={`text-sm transition-all duration-300 ${getSentimentColor(tweet.sentiment)} ${
-                    hoveredTweet === tweet.id ? "scale-105" : ""
-                  }`}
+                  className={`text-sm transition-all duration-300 ${getSentimentColor(tweet.sentiment)}`}
                 >
                   {tweet.sentiment}
                 </Badge>
-                <Badge
-                  variant="outline"
-                  className={`text-primary border-primary transition-all duration-300 text-sm ${
-                    hoveredTweet === tweet.id ? "scale-105 bg-primary/10" : ""
-                  }`}
-                >
-                  Score: {tweet.score}
+                <Badge className="bg-primary/20 text-primary border-primary/30">
+                  Score: {tweet.score.toFixed(2)}
                 </Badge>
               </div>
             </div>
-
-            <p className="text-foreground mb-4 transition-colors duration-300 text-base leading-relaxed">{tweet.content}</p>
-
-            <div className="flex items-center justify-between text-muted-foreground">
-              <div className="flex items-center space-x-6">
-                <div
-                  className={`flex items-center space-x-2 transition-all duration-300 hover:text-red-400 cursor-pointer ${
-                    hoveredTweet === tweet.id ? "scale-110" : ""
-                  }`}
-                >
-                  <Heart className="w-5 h-5 hover:fill-current" />
-                  <span className="text-base">{tweet.likes.toLocaleString()}</span>
+            
+            <p className="text-foreground mb-4 leading-relaxed">{tweet.content}</p>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4 text-muted-foreground">
+                <div className="flex items-center space-x-1">
+                  <Heart className="w-4 h-4" />
+                  <span className="text-sm">{tweet.likes}</span>
                 </div>
-                <div
-                  className={`flex items-center space-x-2 transition-all duration-300 hover:text-blue-400 cursor-pointer ${
-                    hoveredTweet === tweet.id ? "scale-110" : ""
-                  }`}
-                >
-                  <Repeat2 className="w-5 h-5" />
-                  <span className="text-base">{tweet.retweets}</span>
+                <div className="flex items-center space-x-1">
+                  <Repeat2 className="w-4 h-4" />
+                  <span className="text-sm">{tweet.retweets}</span>
                 </div>
-                <div
-                  className={`flex items-center space-x-2 transition-all duration-300 hover:text-primary cursor-pointer ${
-                    hoveredTweet === tweet.id ? "scale-110" : ""
-                  }`}
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  <span className="text-base">{tweet.replies}</span>
+                <div className="flex items-center space-x-1">
+                  <MessageCircle className="w-4 h-4" />
+                  <span className="text-sm">{tweet.replies}</span>
                 </div>
               </div>
-              <Share
-                className={`w-5 h-5 cursor-pointer hover:text-primary transition-all duration-300 ${
-                  hoveredTweet === tweet.id ? "scale-110 rotate-12" : ""
-                }`}
-              />
+              
+              <div className="flex items-center space-x-2">
+                <Share className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer" />
+              </div>
             </div>
           </div>
         ))}

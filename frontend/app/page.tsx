@@ -11,12 +11,48 @@ import { HeroSection } from "@/components/hero-section"
 import { CommandTerminal } from "@/components/command-terminal"
 import { DataRain } from "@/components/data-rain"
 import { LiveSocialFeed } from "@/components/live-social-feed"
+import { apiService, Tweet, SystemStats } from "@/lib/api"
 
 export default function Dashboard() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [tweets, setTweets] = useState<Tweet[]>([])
+  const [leaderboard, setLeaderboard] = useState<Tweet[]>([])
+  const [stats, setStats] = useState<SystemStats>({
+    total_tweets: 0,
+    recent_tweets_24h: 0,
+    average_score: 0,
+    top_score: 0,
+    last_updated: ''
+  })
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setError(null)
+        
+        // Fetch data from API
+        const [tweetsResponse, leaderboardResponse, statsResponse] = await Promise.all([
+          apiService.getTweets(50),
+          apiService.getLeaderboard(20),
+          apiService.getSystemStats()
+        ])
+
+        setTweets(tweetsResponse.data || [])
+        setLeaderboard(leaderboardResponse.data || [])
+        setStats(statsResponse.statistics)
+        
+      } catch (err) {
+        console.error('Failed to fetch data:', err)
+        setError('Failed to load data from backend')
+      }
+    }
+
+    // Fetch data immediately
+    fetchData()
+
+    // Set loading timer
     const timer = setTimeout(() => {
       setIsLoading(false)
       setIsLoaded(true)
@@ -40,21 +76,34 @@ export default function Dashboard() {
         <div
           className={`transition-all duration-1000 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
         >
-          <HeroSection totalTweets={2847} averageScore={8.4} contentAnalyzed={1000000} activeUsers={45231} />
+          <HeroSection 
+            totalTweets={stats.total_tweets} 
+            averageScore={stats.average_score} 
+            contentAnalyzed={stats.total_tweets} 
+            activeUsers={stats.recent_tweets_24h} 
+          />
         </div>
+
+        {error && (
+          <div className="container mx-auto px-4 py-4">
+            <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 text-red-400">
+              ⚠️ {error} - Showing demo data
+            </div>
+          </div>
+        )}
 
         <main className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
           <div
             className={`grid grid-cols-1 xl:grid-cols-3 gap-8 transition-all duration-1000 delay-400 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
           >
             <div className="xl:col-span-2 space-y-8">
-              <TrendingContent />
-              <LiveSocialFeed />
+              <TrendingContent tweets={tweets} />
+              <LiveSocialFeed tweets={tweets.slice(0, 10)} />
               <CommandTerminal />
-              <ActivityFeed />
+              <ActivityFeed tweets={tweets.slice(0, 15)} />
             </div>
             <div className="xl:col-span-1">
-              <Leaderboard />
+              <Leaderboard tweets={leaderboard} />
             </div>
           </div>
         </main>
