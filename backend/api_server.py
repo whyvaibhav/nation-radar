@@ -54,9 +54,7 @@ def get_tweets():
             return jsonify({"error": "Database connection failed"}), 500
         
         query = """
-        SELECT id, text, username, score, created_at, 
-               engagement_likes, engagement_retweets, engagement_replies, 
-               engagement_views, engagement_bookmarks, engagement_quote_tweets
+        SELECT id, text, username, score, created_at, engagement
         FROM tweets 
         WHERE score > 0 
         ORDER BY created_at DESC 
@@ -67,6 +65,16 @@ def get_tweets():
         tweets = []
         
         for row in cursor:
+            # Parse engagement data (it's stored as TEXT)
+            engagement_data = {}
+            try:
+                if row['engagement']:
+                    engagement_data = json.loads(row['engagement'])
+                else:
+                    engagement_data = {}
+            except:
+                engagement_data = {}
+            
             tweet = {
                 "id": row['id'],
                 "text": row['text'],
@@ -74,12 +82,12 @@ def get_tweets():
                 "score": row['score'],
                 "created_at": row['created_at'],
                 "engagement": {
-                    "likes": row['engagement_likes'] or 0,
-                    "retweets": row['engagement_retweets'] or 0,
-                    "replies": row['engagement_replies'] or 0,
-                    "views": row['engagement_views'] or 0,
-                    "bookmarks": row['engagement_bookmarks'] or 0,
-                    "quote_tweets": row['engagement_quote_tweets'] or 0
+                    "likes": engagement_data.get('likes', 0),
+                    "retweets": engagement_data.get('retweets', 0),
+                    "replies": engagement_data.get('replies', 0),
+                    "views": engagement_data.get('views', 0),
+                    "bookmarks": engagement_data.get('bookmarks', 0),
+                    "quote_tweets": engagement_data.get('quote_tweets', 0)
                 }
             }
             tweets.append(tweet)
@@ -107,9 +115,7 @@ def get_leaderboard():
             return jsonify({"error": "Database connection failed"}), 500
         
         query = """
-        SELECT id, text, username, score, created_at,
-               engagement_likes, engagement_retweets, engagement_replies,
-               engagement_views, engagement_bookmarks, engagement_quote_tweets
+        SELECT id, text, username, score, created_at, engagement
         FROM tweets 
         WHERE score > 0 
         ORDER BY score DESC 
@@ -120,6 +126,16 @@ def get_leaderboard():
         leaderboard = []
         
         for row in cursor:
+            # Parse engagement data (it's stored as TEXT)
+            engagement_data = {}
+            try:
+                if row['engagement']:
+                    engagement_data = json.loads(row['engagement'])
+                else:
+                    engagement_data = {}
+            except:
+                engagement_data = {}
+            
             tweet = {
                 "id": row['id'],
                 "text": row['text'],
@@ -127,12 +143,12 @@ def get_leaderboard():
                 "score": row['score'],
                 "created_at": row['created_at'],
                 "engagement": {
-                    "likes": row['engagement_likes'] or 0,
-                    "retweets": row['engagement_retweets'] or 0,
-                    "replies": row['engagement_replies'] or 0,
-                    "views": row['engagement_views'] or 0,
-                    "bookmarks": row['engagement_bookmarks'] or 0,
-                    "quote_tweets": row['engagement_quote_tweets'] or 0
+                    "likes": engagement_data.get('likes', 0),
+                    "retweets": engagement_data.get('retweets', 0),
+                    "replies": engagement_data.get('replies', 0),
+                    "views": engagement_data.get('views', 0),
+                    "bookmarks": engagement_data.get('bookmarks', 0),
+                    "quote_tweets": engagement_data.get('quote_tweets', 0)
                 }
             }
             leaderboard.append(tweet)
@@ -203,9 +219,7 @@ def search_tweets():
         
         # Search in tweet text
         search_query = """
-        SELECT id, text, username, score, created_at,
-               engagement_likes, engagement_retweets, engagement_replies,
-               engagement_views, engagement_bookmarks, engagement_quote_tweets
+        SELECT id, text, username, score, created_at, engagement
         FROM tweets 
         WHERE text LIKE ? AND score > 0
         ORDER BY score DESC 
@@ -216,6 +230,16 @@ def search_tweets():
         results = []
         
         for row in cursor:
+            # Parse engagement data (it's stored as TEXT)
+            engagement_data = {}
+            try:
+                if row['engagement']:
+                    engagement_data = json.loads(row['engagement'])
+                else:
+                    engagement_data = {}
+            except:
+                engagement_data = {}
+            
             tweet = {
                 "id": row['id'],
                 "text": row['text'],
@@ -223,12 +247,12 @@ def search_tweets():
                 "score": row['score'],
                 "created_at": row['created_at'],
                 "engagement": {
-                    "likes": row['engagement_likes'] or 0,
-                    "retweets": row['engagement_retweets'] or 0,
-                    "replies": row['engagement_replies'] or 0,
-                    "views": row['engagement_views'] or 0,
-                    "bookmarks": row['engagement_bookmarks'] or 0,
-                    "quote_tweets": row['engagement_quote_tweets'] or 0
+                    "likes": engagement_data.get('likes', 0),
+                    "retweets": engagement_data.get('retweets', 0),
+                    "replies": engagement_data.get('replies', 0),
+                    "views": engagement_data.get('views', 0),
+                    "bookmarks": engagement_data.get('bookmarks', 0),
+                    "quote_tweets": engagement_data.get('quote_tweets', 0)
                 }
             }
             results.append(tweet)
