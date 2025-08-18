@@ -1,0 +1,25 @@
+import os
+from dotenv import load_dotenv
+import yaml
+
+load_dotenv()
+
+# Load YAML config
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.yaml')
+with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+    config = yaml.safe_load(f)
+
+# API Keys (set these in a .env file for security)
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'x')
+SOCIALDATA_API_KEY = os.getenv('SOCIALDATA_API_KEY', 'x')
+GOOGLE_SHEETS_CREDENTIALS = os.getenv('GOOGLE_SHEETS_CREDENTIALS', 'credentials.json')
+RAPIDAPI_KEY = os.getenv('RAPIDAPI_KEY', 'YOUR_RAPIDAPI_KEY')
+NATION_AGENT_API_KEY = os.getenv('NATION_AGENT_API_KEY', 'YOUR_NATION_AGENT_API_KEY')
+
+# Config values from YAML
+KEYWORDS = config.get('keywords', [])
+DAYS_LOOKBACK = int(config.get('days_lookback', 7))
+CSV_FILENAME = config.get('csv_filename', 'tweets.csv')
+
+# Other settings
+DEBUG_MODE = os.getenv('DEBUG_MODE', 'False') == 'True'

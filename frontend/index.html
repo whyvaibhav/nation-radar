@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nation Radar - Crestal Network Intelligence</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-radar"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>NATION RADAR</h1>
+                    <span class="subtitle">Crestal Network Intelligence</span>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <div class="status-dot active"></div>
+                <span>Live Monitoring</span>
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h2>Discover the Pulse of Crestal Network</h2>
+                <p>Real-time insights into community sentiment, content quality, and ecosystem growth powered by advanced AI analysis.</p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-users"></i>
+                        <span class="stat-number" id="total-users">-</span>
+                        <span class="stat-label">Active Community</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-brain"></i>
+                        <span class="stat-number" id="avg-score">-</span>
+                        <span class="stat-label">Quality Score</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="stat-number" id="total-content">-</span>
+                        <span class="stat-label">Content Analyzed</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content Grid -->
+        <main class="main-content">
+            <!-- Trending Content Section -->
+            <section class="content-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-fire"></i> Trending Content</h3>
+                    <p>Top-performing content from the Crestal ecosystem</p>
+                </div>
+                <div class="content-grid" id="trending-content">
+                    <!-- Content cards will be populated here -->
+                </div>
+            </section>
+
+            <!-- Community Insights Section -->
+            <section class="content-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-chart-pie"></i> Community Insights</h3>
+                    <p>Real-time analysis of community engagement and sentiment</p>
+                </div>
+                <div class="insights-grid">
+                    <div class="insight-card">
+                        <div class="insight-icon quality">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="insight-content">
+                            <h4>Content Quality</h4>
+                            <div class="insight-metric">
+                                <span class="metric-value" id="quality-metric">-</span>
+                                <span class="metric-label">Average Score</span>
+                            </div>
+                            <div class="insight-trend positive">
+                                <i class="fas fa-arrow-up"></i>
+                                <span id="quality-trend">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="insight-card">
+                        <div class="insight-icon engagement">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div class="insight-content">
+                            <h4>Engagement Rate</h4>
+                            <div class="insight-metric">
+                                <span class="metric-value" id="engagement-metric">-</span>
+                                <span class="metric-label">Avg. Engagement</span>
+                            </div>
+                            <div class="insight-trend positive">
+                                <i class="fas fa-arrow-up"></i>
+                                <span id="engagement-trend">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="insight-card">
+                        <div class="insight-icon activity">
+                            <i class="fas fa-activity"></i>
+                        </div>
+                        <div class="insight-content">
+                            <h4>Community Activity</h4>
+                            <div class="insight-metric">
+                                <span class="metric-value" id="activity-metric">-</span>
+                                <span class="metric-label">Active Contributors</span>
+                            </div>
+                            <div class="insight-trend positive">
+                                <i class="fas fa-arrow-up"></i>
+                                <span id="activity-trend">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Top Contributors Section -->
+            <section class="content-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-trophy"></i> Top Contributors</h3>
+                    <p>Community leaders driving quality content</p>
+                </div>
+                <div class="leaderboard" id="leaderboard">
+                    <!-- Leaderboard will be populated here -->
+                </div>
+            </section>
+
+            <!-- Recent Activity Section -->
+            <section class="content-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-clock"></i> Recent Activity</h3>
+                    <p>Latest content and community updates</p>
+                </div>
+                <div class="activity-feed" id="activity-feed">
+                    <!-- Activity items will be populated here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2024 Nation Radar. Powered by Crestal Network AI.</p>
+                <div class="footer-links">
+                    <span>Last updated: <span id="last-update">-</span></span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-radar fa-spin"></i>
+            <p>Analyzing Crestal Network...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

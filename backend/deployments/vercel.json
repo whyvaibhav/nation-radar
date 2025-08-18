@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "name": "crestal-monitor",
+  "builds": [
+    {
+      "src": "app.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "frontend/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "app.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/$1"
+    },
+    {
+      "src": "/",
+      "dest": "frontend/index.html"
+    }
+  ],
+  "env": {
+    "RAPIDAPI_KEY": "@rapidapi_key",
+    "NATION_AGENT_API_KEY": "@nation_agent_api_key",
+    "DEBUG_MODE": "False"
+  },
+  "functions": {
+    "app.py": {
+      "maxDuration": 30
+    }
+  }
+}

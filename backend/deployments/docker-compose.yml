@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  crestal-monitor:
+    build: .
+    container_name: crestal-monitor
+    restart: unless-stopped
+    environment:
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
+      - NATION_AGENT_API_KEY=${NATION_AGENT_API_KEY}
+      - DEBUG_MODE=False
+    volumes:
+      - ./data:/app/data  # Persist data
+      - ./logs:/app/logs  # Persist logs
+    networks:
+      - crestal-net
+
+  # Optional: Web dashboard
+  crestal-web:
+    build: .
+    container_name: crestal-web
+    restart: unless-stopped
+    command: python app.py
+    ports:
+      - "5000:5000"
+    environment:
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
+      - NATION_AGENT_API_KEY=${NATION_AGENT_API_KEY}
+    volumes:
+      - ./data:/app/data
+    networks:
+      - crestal-net
+    depends_on:
+      - crestal-monitor
+
+networks:
+  crestal-net:
+    driver: bridge
