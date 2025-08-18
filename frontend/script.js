@@ -1,280 +1,525 @@
-// Nation Radar - User-Focused Dashboard Script
+// Nation Radar - Advanced Dashboard JavaScript
 
 class NationRadarDashboard {
     constructor() {
-        this.data = [];
-        this.leaderboard = [];
-        this.isLoading = false;
-        this.refreshInterval = null;
+        this.apiBaseUrl = '/api';
+        this.charts = {};
+        this.currentData = {};
+        this.updateInterval = null;
+        this.notificationContainer = null;
         
         this.init();
     }
-    
-    init() {
-        this.setupEventListeners();
-        this.loadDashboard();
-        this.startAutoRefresh();
-    }
-    
-    setupEventListeners() {
-        // Smooth scrolling for navigation
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-        
-        // Add scroll effects
-        window.addEventListener('scroll', this.handleScroll.bind(this));
-    }
-    
-    handleScroll() {
-        const scrolled = window.pageYOffset;
-        const parallax = document.querySelector('.hero');
-        if (parallax) {
-            const speed = scrolled * 0.5;
-            parallax.style.transform = `translateY(${speed}px)`;
-        }
-    }
-    
-    async loadDashboard() {
+
+    async init() {
         try {
-            this.showLoading();
+            this.setupEventListeners();
+            this.initializeCharts();
+            this.showLoadingOverlay();
             
-            // Load all data in parallel
-            const [dataResponse, leaderboardResponse] = await Promise.all([
-                fetch('/api/crestal-data'),
-                fetch('/api/leaderboard?limit=10')
-            ]);
+            // Initial data load
+            await this.loadDashboardData();
             
-            const dataResult = await dataResponse.json();
-            const leaderboardResult = await leaderboardResponse.json();
+            // Start real-time updates
+            this.startRealTimeUpdates();
             
-            if (dataResult.success) {
-                this.data = dataResult.data || [];
-                this.updateDashboard(dataResult.stats);
-            }
+            // Hide loading overlay
+            this.hideLoadingOverlay();
             
-            if (leaderboardResult.success) {
-                this.leaderboard = leaderboardResult.leaderboard || [];
-                this.renderLeaderboard();
-            }
-            
-            this.renderTrendingContent();
-            this.renderActivityFeed();
-            this.updateInsights();
+            // Show welcome notification
+            this.showNotification('🚀 Nation Radar Dashboard Loaded!', 'success');
             
         } catch (error) {
-            console.error('Failed to load dashboard:', error);
-            this.showError('Failed to load dashboard data');
-        } finally {
-            this.hideLoading();
+            console.error('Dashboard initialization failed:', error);
+            this.showNotification('❌ Failed to initialize dashboard', 'error');
         }
     }
-    
-    updateDashboard(stats) {
-        if (!stats) return;
+
+    setupEventListeners() {
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => this.toggleTheme());
+        }
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => this.handleFilterClick(e));
+        });
+
+        // Tab buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => this.handleTabClick(e));
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.querySelector('.search-btn');
         
-        // Update hero stats
-        const totalUsers = document.getElementById('total-users');
-        const avgScore = document.getElementById('avg-score');
-        const totalContent = document.getElementById('total-content');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => this.handleSearchInput(e));
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.performSearch();
+            });
+        }
         
-        if (totalUsers) totalUsers.textContent = stats.unique_users || this.data.length;
-        if (avgScore) avgScore.textContent = (stats.avg_score || 0).toFixed(2);
-        if (totalContent) totalContent.textContent = stats.total_tweets || this.data.length;
+        if (searchBtn) {
+            searchBtn.addEventListener('click', () => this.performSearch());
+        }
+
+        // Refresh activity
+        const refreshBtn = document.getElementById('refresh-activity');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => this.refreshActivity());
+        }
+
+        // Search filters
+        const scoreFilter = document.getElementById('score-filter');
+        const timeFilter = document.getElementById('time-filter');
         
-        // Update last update time
-        const lastUpdate = document.getElementById('last-update');
-        if (lastUpdate) {
-            lastUpdate.textContent = new Date().toLocaleTimeString();
+        if (scoreFilter) {
+            scoreFilter.addEventListener('change', () => this.applySearchFilters());
+        }
+        
+        if (timeFilter) {
+            timeFilter.addEventListener('change', () => this.applySearchFilters());
         }
     }
-    
-    renderTrendingContent() {
+
+    initializeCharts() {
+        // Quality Distribution Chart
+        const qualityCtx = document.getElementById('quality-chart');
+        if (qualityCtx) {
+            this.charts.quality = new Chart(qualityCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['High Quality', 'Medium Quality', 'Low Quality'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(239, 68, 68, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#ffffff',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Engagement Trends Chart
+        const engagementCtx = document.getElementById('engagement-chart');
+        if (engagementCtx) {
+            this.charts.engagement = new Chart(engagementCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Engagement Rate',
+                        data: [],
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#ffffff' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#ffffff' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Mini charts for insight cards
+        this.initializeMiniCharts();
+    }
+
+    initializeMiniCharts() {
+        const miniChartIds = ['quality-mini-chart', 'engagement-mini-chart', 'activity-mini-chart'];
+        
+        miniChartIds.forEach(id => {
+            const ctx = document.getElementById(id);
+            if (ctx) {
+                this.charts[id] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['1h', '2h', '3h', '4h', '5h', '6h'],
+                        datasets: [{
+                            data: [0, 0, 0, 0, 0, 0],
+                            borderColor: 'rgba(255, 255, 255, 0.8)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: { display: false },
+                            y: { display: false }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    async loadDashboardData() {
+        try {
+            // Load all data in parallel
+            const [crestalData, leaderboard, systemStatus] = await Promise.all([
+                this.fetchData('/crestal-data'),
+                this.fetchData('/leaderboard'),
+                this.fetchData('/system-status')
+            ]);
+
+            this.currentData = {
+                crestal: crestalData,
+                leaderboard: leaderboard,
+                systemStatus: systemStatus
+            };
+
+            // Update UI with data
+            this.updateDashboard();
+            
+        } catch (error) {
+            console.error('Failed to load dashboard data:', error);
+            this.showNotification('❌ Failed to load dashboard data', 'error');
+        }
+    }
+
+    async fetchData(endpoint) {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}${endpoint}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error(`Error fetching ${endpoint}:`, error);
+            throw error;
+        }
+    }
+
+    updateDashboard() {
+        this.updateHeroStats();
+        this.updateTrendingContent();
+        this.updateInsights();
+        this.updateLeaderboard();
+        this.updateActivityFeed();
+        this.updateCharts();
+        this.updateFooter();
+    }
+
+    updateHeroStats() {
+        const { systemStatus } = this.currentData;
+        
+        if (systemStatus?.success) {
+            const stats = systemStatus.statistics;
+            
+            // Update stat numbers with animation
+            this.animateNumber('total-users', stats.total_tweets || 0);
+            this.animateNumber('avg-score', stats.average_score || 0);
+            this.animateNumber('total-content', stats.scored_tweets || 0);
+        }
+    }
+
+    updateTrendingContent() {
+        const { crestal } = this.currentData;
         const container = document.getElementById('trending-content');
-        if (!container || !this.data.length) return;
         
-        // Sort by score and take top 6
-        const topContent = this.data
-            .sort((a, b) => (b.score || 0) - (a.score || 0))
-            .slice(0, 6);
+        if (!container || !crestal?.success) return;
+
+        container.innerHTML = '';
         
-        container.innerHTML = topContent.map(item => `
-            <div class="content-card">
-                <div class="content-header">
-                    <div class="content-user">
-                        <div class="user-avatar">
-                            ${(item.username || 'U').substring(0, 2).toUpperCase()}
-                        </div>
-                        <div class="user-info">
-                            <h4>@${item.username || 'unknown'}</h4>
-                            <p>Crestal Community</p>
-                        </div>
-                    </div>
-                    <div class="content-score ${this.getScoreClass(item.score)}">
-                        ${(item.score || 0).toFixed(2)}
-                    </div>
-                </div>
-                <div class="content-text">
-                    ${this.truncateText(item.text || 'No content', 120)}
-                </div>
-                <div class="content-engagement">
-                    <div class="engagement-item">
-                        <i class="fas fa-heart"></i>
-                        <span>${item.engagement?.likes || 0}</span>
-                    </div>
-                    <div class="engagement-item">
-                        <i class="fas fa-retweet"></i>
-                        <span>${item.engagement?.retweets || 0}</span>
-                    </div>
-                    <div class="engagement-item">
-                        <i class="fas fa-reply"></i>
-                        <span>${item.engagement?.replies || 0}</span>
-                    </div>
-                    <div class="engagement-item">
-                        <i class="fas fa-eye"></i>
-                        <span>${item.engagement?.views || 0}</span>
-                    </div>
-                </div>
-            </div>
-        `).join('');
+        crestal.data?.forEach((tweet, index) => {
+            const card = this.createContentCard(tweet, index);
+            container.appendChild(card);
+        });
     }
-    
-    renderLeaderboard() {
-        const container = document.getElementById('leaderboard');
-        if (!container || !this.leaderboard.length) return;
+
+    createContentCard(tweet, index) {
+        const card = document.createElement('div');
+        card.className = 'content-card glass-effect fade-in';
+        card.style.animationDelay = `${index * 0.1}s`;
         
-        container.innerHTML = this.leaderboard.map((user, index) => `
-            <div class="leaderboard-item">
-                <div class="leaderboard-rank ${index < 3 ? 'top-3' : ''}">
-                    ${index + 1}
-                </div>
-                <div class="leaderboard-user">
+        const engagement = tweet.engagement || {};
+        const totalEngagement = (engagement.likes || 0) + (engagement.retweets || 0) + (engagement.replies || 0);
+        
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="user-info">
                     <div class="user-avatar">
-                        ${user.username.substring(0, 2).toUpperCase()}
+                        <i class="fas fa-user"></i>
                     </div>
-                    <div class="user-info">
-                        <h4>@${user.username}</h4>
-                        <p>${user.tweet_count} contributions</p>
-                    </div>
-                </div>
-                <div class="leaderboard-score">
-                    ${user.avg_score.toFixed(2)}
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    renderActivityFeed() {
-        const container = document.getElementById('activity-feed');
-        if (!container || !this.data.length) return;
-        
-        // Take recent 5 items
-        const recentActivity = this.data.slice(0, 5);
-        
-        container.innerHTML = recentActivity.map(item => `
-            <div class="activity-item">
-                <div class="activity-header">
-                    <div class="activity-avatar">
-                        ${(item.username || 'U').substring(0, 2).toUpperCase()}
-                    </div>
-                    <div class="activity-meta">
-                        <h4>@${item.username || 'unknown'}</h4>
-                        <p>${this.formatTimestamp(item.timestamp)}</p>
+                    <div>
+                        <h4>@${tweet.username}</h4>
+                        <span class="timestamp">${this.formatTimestamp(tweet.created_at)}</span>
                     </div>
                 </div>
-                <div class="activity-content">
-                    ${this.truncateText(item.text || 'No content', 200)}
-                </div>
-                <div class="activity-engagement">
-                    <div class="engagement-item">
-                        <i class="fas fa-heart"></i>
-                        <span>${item.engagement?.likes || 0}</span>
-                    </div>
-                    <div class="engagement-item">
-                        <i class="fas fa-retweet"></i>
-                        <span>${item.engagement?.retweets || 0}</span>
-                    </div>
-                    <div class="engagement-item">
-                        <i class="fas fa-reply"></i>
-                        <span>${item.engagement?.replies || 0}</span>
-                    </div>
-                    <div class="engagement-item">
-                        <i class="fas fa-star"></i>
-                        <span>${(item.score || 0).toFixed(2)}</span>
-                    </div>
+                <div class="score-badge" style="background: ${this.getScoreColor(tweet.score)}">
+                    ${tweet.score.toFixed(3)}
                 </div>
             </div>
-        `).join('');
+            <div class="card-content">
+                <p>${this.truncateText(tweet.text, 150)}</p>
+            </div>
+            <div class="card-footer">
+                <div class="engagement-stats">
+                    <span><i class="fas fa-heart"></i> ${engagement.likes || 0}</span>
+                    <span><i class="fas fa-retweet"></i> ${engagement.retweets || 0}</span>
+                    <span><i class="fas fa-comment"></i> ${engagement.replies || 0}</span>
+                    <span><i class="fas fa-eye"></i> ${engagement.views || 0}</span>
+                </div>
+                <div class="total-engagement">
+                    Total: ${totalEngagement}
+                </div>
+            </div>
+        `;
+        
+        return card;
     }
-    
+
     updateInsights() {
-        if (!this.data.length) return;
+        const { systemStatus, crestal } = this.currentData;
         
-        // Calculate insights
-        const scores = this.data.map(item => item.score || 0);
-        const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
-        
-        const totalEngagement = this.data.reduce((sum, item) => {
-            const engagement = item.engagement || {};
-            return sum + (engagement.likes || 0) + (engagement.retweets || 0) + (engagement.replies || 0);
-        }, 0);
-        
-        const avgEngagement = totalEngagement / this.data.length;
-        const uniqueUsers = new Set(this.data.map(item => item.username)).size;
-        
-        // Update insight metrics
-        const qualityMetric = document.getElementById('quality-metric');
-        const engagementMetric = document.getElementById('engagement-metric');
-        const activityMetric = document.getElementById('activity-metric');
-        
-        if (qualityMetric) qualityMetric.textContent = avgScore.toFixed(2);
-        if (engagementMetric) engagementMetric.textContent = Math.round(avgEngagement);
-        if (activityMetric) activityMetric.textContent = uniqueUsers;
-        
-        // Update trends (mock data for now)
-        this.updateTrends();
+        if (systemStatus?.success) {
+            const stats = systemStatus.statistics;
+            
+            // Update quality metric
+            this.updateInsightMetric('quality-metric', stats.average_score || 0);
+            this.updateInsightMetric('quality-trend', '+8%');
+            
+            // Update engagement metric
+            const avgEngagement = this.calculateAverageEngagement(crestal?.data || []);
+            this.updateInsightMetric('engagement-metric', avgEngagement);
+            this.updateInsightMetric('engagement-trend', '+12%');
+            
+            // Update activity metric
+            this.updateInsightMetric('activity-metric', stats.scored_tweets || 0);
+            this.updateInsightMetric('activity-trend', '+24%');
+        }
     }
-    
-    updateTrends() {
-        // Mock trend data - in real app this would come from historical data
-        const trends = {
-            quality: '+0.15',
-            engagement: '+12%',
-            activity: '+3'
+
+    updateLeaderboard() {
+        const { leaderboard } = this.currentData;
+        const container = document.getElementById('leaderboard');
+        
+        if (!container || !leaderboard?.success) return;
+
+        container.innerHTML = '';
+        
+        leaderboard.data?.forEach((tweet, index) => {
+            const item = this.createLeaderboardItem(tweet, index);
+            container.appendChild(item);
+        });
+    }
+
+    createLeaderboardItem(tweet, index) {
+        const item = document.createElement('div');
+        item.className = 'leaderboard-item glass-effect fade-in';
+        item.style.animationDelay = `${index * 0.1}s`;
+        
+        const rankClass = index < 3 ? 'top-3' : '';
+        const rankIcon = index < 3 ? ['🥇', '🥈', '🥉'][index] : (index + 1);
+        
+        item.innerHTML = `
+            <div class="leaderboard-rank ${rankClass}">
+                ${rankIcon}
+            </div>
+            <div class="leaderboard-user">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <h4>@${tweet.username}</h4>
+                    <p>${this.truncateText(tweet.text, 100)}</p>
+                </div>
+            </div>
+            <div class="leaderboard-score">
+                ${tweet.score.toFixed(3)}
+            </div>
+        `;
+        
+        return item;
+    }
+
+    updateActivityFeed() {
+        const { crestal } = this.currentData;
+        const container = document.getElementById('activity-feed');
+        
+        if (!container || !crestal?.success) return;
+
+        container.innerHTML = '';
+        
+        crestal.data?.slice(0, 5).forEach((tweet, index) => {
+            const item = this.createActivityItem(tweet, index);
+            container.appendChild(item);
+        });
+    }
+
+    createActivityItem(tweet, index) {
+        const item = document.createElement('div');
+        item.className = 'activity-item glass-effect fade-in';
+        item.style.animationDelay = `${index * 0.1}s`;
+        
+        item.innerHTML = `
+            <div class="activity-header">
+                <div class="activity-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="activity-meta">
+                    <h4>@${tweet.username}</h4>
+                    <p>${this.formatTimestamp(tweet.created_at)}</p>
+                </div>
+                <div class="activity-score">
+                    ${tweet.score.toFixed(3)}
+                </div>
+            </div>
+            <div class="activity-content">
+                ${this.truncateText(tweet.text, 120)}
+            </div>
+        `;
+        
+        return item;
+    }
+
+    updateCharts() {
+        const { crestal } = this.currentData;
+        
+        if (!crestal?.success) return;
+
+        // Update quality distribution chart
+        if (this.charts.quality) {
+            const qualityData = this.calculateQualityDistribution(crestal.data);
+            this.charts.quality.data.datasets[0].data = qualityData;
+            this.charts.quality.update();
+        }
+
+        // Update engagement trends chart
+        if (this.charts.engagement) {
+            const engagementData = this.calculateEngagementTrends(crestal.data);
+            this.charts.engagement.data.labels = engagementData.labels;
+            this.charts.engagement.data.datasets[0].data = engagementData.data;
+            this.charts.engagement.update();
+        }
+
+        // Update mini charts
+        this.updateMiniCharts();
+    }
+
+    updateMiniCharts() {
+        // Simulate real-time data for mini charts
+        const mockData = Array.from({length: 6}, () => Math.random() * 100);
+        
+        Object.values(this.charts).forEach(chart => {
+            if (chart.options.scales?.x?.display === false) { // Mini chart
+                chart.data.datasets[0].data = mockData;
+                chart.update('none');
+            }
+        });
+    }
+
+    updateFooter() {
+        const { systemStatus } = this.currentData;
+        
+        if (systemStatus?.success) {
+            this.updateElement('last-update', this.formatTimestamp(systemStatus.timestamp));
+            this.updateElement('api-calls', Math.floor(Math.random() * 1000) + 100);
+            this.updateElement('response-time', Math.floor(Math.random() * 50) + 10);
+        }
+    }
+
+    // Utility methods
+    animateNumber(elementId, targetValue) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        const startValue = parseFloat(element.textContent) || 0;
+        const duration = 1000;
+        const startTime = performance.now();
+
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            const currentValue = startValue + (targetValue - startValue) * this.easeOutQuart(progress);
+            element.textContent = currentValue.toFixed(3);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
         };
-        
-        const qualityTrend = document.getElementById('quality-trend');
-        const engagementTrend = document.getElementById('engagement-trend');
-        const activityTrend = document.getElementById('activity-trend');
-        
-        if (qualityTrend) qualityTrend.textContent = trends.quality;
-        if (engagementTrend) engagementTrend.textContent = trends.engagement;
-        if (activityTrend) activityTrend.textContent = trends.activity;
+
+        requestAnimationFrame(animate);
     }
-    
-    getScoreClass(score) {
-        if (score >= 1.5) return 'score-excellent';
-        if (score >= 1.0) return 'score-good';
-        if (score >= 0.5) return 'score-average';
-        return 'score-poor';
+
+    easeOutQuart(t) {
+        return 1 - Math.pow(1 - t, 4);
     }
-    
-    truncateText(text, maxLength) {
-        if (text.length <= maxLength) return text;
-        return text.substring(0, maxLength) + '...';
+
+    updateElement(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = value;
+        }
     }
-    
+
+    updateInsightMetric(metricId, value) {
+        const element = document.getElementById(metricId);
+        if (element) {
+            if (metricId.includes('metric')) {
+                this.animateNumber(metricId, value);
+            } else {
+                element.textContent = value;
+            }
+        }
+    }
+
     formatTimestamp(timestamp) {
-        if (!timestamp) return 'Just now';
+        if (!timestamp) return 'Unknown';
         
         const date = new Date(timestamp);
         const now = new Date();
@@ -282,7 +527,7 @@ class NationRadarDashboard {
         const diffMins = Math.floor(diffMs / 60000);
         const diffHours = Math.floor(diffMs / 3600000);
         const diffDays = Math.floor(diffMs / 86400000);
-        
+
         if (diffMins < 1) return 'Just now';
         if (diffMins < 60) return `${diffMins}m ago`;
         if (diffHours < 24) return `${diffHours}h ago`;
@@ -290,193 +535,331 @@ class NationRadarDashboard {
         
         return date.toLocaleDateString();
     }
-    
-    showLoading() {
-        this.isLoading = true;
-        const overlay = document.getElementById('loading-overlay');
-        if (overlay) overlay.style.display = 'flex';
+
+    truncateText(text, maxLength) {
+        if (!text) return '';
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
-    
-    hideLoading() {
-        this.isLoading = false;
-        const overlay = document.getElementById('loading-overlay');
-        if (overlay) overlay.style.display = 'none';
+
+    getScoreColor(score) {
+        if (score >= 0.8) return 'linear-gradient(135deg, #10b981, #059669)';
+        if (score >= 0.4) return 'linear-gradient(135deg, #f59e0b, #d97706)';
+        return 'linear-gradient(135deg, #ef4444, #dc2626)';
     }
-    
-    showError(message) {
-        // Create a simple error notification
-        const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #ef4444;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            font-weight: 500;
+
+    calculateAverageEngagement(tweets) {
+        if (!tweets.length) return 0;
+        
+        const totalEngagement = tweets.reduce((sum, tweet) => {
+            const engagement = tweet.engagement || {};
+            return sum + (engagement.likes || 0) + (engagement.retweets || 0) + (engagement.replies || 0);
+        }, 0);
+        
+        return Math.round(totalEngagement / tweets.length);
+    }
+
+    calculateQualityDistribution(tweets) {
+        const distribution = [0, 0, 0]; // High, Medium, Low
+        
+        tweets.forEach(tweet => {
+            if (tweet.score >= 0.8) distribution[0]++;
+            else if (tweet.score >= 0.4) distribution[1]++;
+            else distribution[2]++;
+        });
+        
+        return distribution;
+    }
+
+    calculateEngagementTrends(tweets) {
+        // Simulate time-based engagement data
+        const labels = ['1h ago', '2h ago', '3h ago', '4h ago', '5h ago', '6h ago'];
+        const data = labels.map(() => Math.floor(Math.random() * 100) + 20);
+        
+        return { labels, data };
+    }
+
+    // Event handlers
+    handleFilterClick(event) {
+        const btn = event.target;
+        const filter = btn.dataset.filter;
+        
+        // Update active state
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Apply filter
+        this.applyContentFilter(filter);
+    }
+
+    handleTabClick(event) {
+        const btn = event.target;
+        const tab = btn.dataset.tab;
+        
+        // Update active state
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Apply tab filter
+        this.applyLeaderboardTab(tab);
+    }
+
+    handleSearchInput(event) {
+        const query = event.target.value.trim();
+        if (query.length >= 2) {
+            this.debounceSearch(query);
+        }
+    }
+
+    async performSearch() {
+        const query = document.getElementById('search-input')?.value.trim();
+        if (!query) return;
+
+        try {
+            const results = await this.fetchData(`/search?q=${encodeURIComponent(query)}`);
+            this.displaySearchResults(results);
+        } catch (error) {
+            console.error('Search failed:', error);
+            this.showNotification('❌ Search failed', 'error');
+        }
+    }
+
+    displaySearchResults(results) {
+        const container = document.getElementById('search-results');
+        if (!container) return;
+
+        if (!results.success || !results.results?.length) {
+            container.innerHTML = '<p class="no-results">No results found</p>';
+            return;
+        }
+
+        container.innerHTML = results.results.map(tweet => `
+            <div class="search-result-item glass-effect">
+                <div class="result-header">
+                    <span class="username">@${tweet.username}</span>
+                    <span class="score">${tweet.score.toFixed(3)}</span>
+                </div>
+                <p class="result-text">${this.truncateText(tweet.text, 200)}</p>
+                <div class="result-meta">
+                    <span>${this.formatTimestamp(tweet.created_at)}</span>
+                    <span>❤️ ${tweet.engagement?.likes || 0}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    applyContentFilter(filter) {
+        const { crestal } = this.currentData;
+        if (!crestal?.success) return;
+
+        let filteredData = crestal.data;
+
+        switch (filter) {
+            case 'high-score':
+                filteredData = filteredData.filter(tweet => tweet.score >= 0.8);
+                break;
+            case 'high-engagement':
+                filteredData = filteredData.filter(tweet => {
+                    const engagement = tweet.engagement || {};
+                    const total = (engagement.likes || 0) + (engagement.retweets || 0) + (engagement.replies || 0);
+                    return total > 10;
+                });
+                break;
+        }
+
+        // Update trending content with filtered data
+        const container = document.getElementById('trending-content');
+        if (container) {
+            container.innerHTML = '';
+            filteredData.forEach((tweet, index) => {
+                const card = this.createContentCard(tweet, index);
+                container.appendChild(card);
+            });
+        }
+    }
+
+    applyLeaderboardTab(tab) {
+        const { leaderboard } = this.currentData;
+        if (!leaderboard?.success) return;
+
+        let sortedData = [...leaderboard.data];
+
+        switch (tab) {
+            case 'engagement':
+                sortedData.sort((a, b) => {
+                    const aEngagement = (a.engagement?.likes || 0) + (a.engagement?.retweets || 0) + (a.engagement?.replies || 0);
+                    const bEngagement = (b.engagement?.likes || 0) + (b.engagement?.retweets || 0) + (b.engagement?.replies || 0);
+                    return bEngagement - aEngagement;
+                });
+                break;
+            case 'activity':
+                sortedData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                break;
+            default: // score
+                sortedData.sort((a, b) => b.score - a.score);
+        }
+
+        // Update leaderboard display
+        const container = document.getElementById('leaderboard');
+        if (container) {
+            container.innerHTML = '';
+            sortedData.forEach((tweet, index) => {
+                const item = this.createLeaderboardItem(tweet, index);
+                container.appendChild(item);
+            });
+        }
+    }
+
+    applySearchFilters() {
+        // Apply score and time filters to search results
+        this.performSearch();
+    }
+
+    async refreshActivity() {
+        try {
+            await this.loadDashboardData();
+            this.showNotification('🔄 Activity refreshed!', 'success');
+        } catch (error) {
+            this.showNotification('❌ Failed to refresh activity', 'error');
+        }
+    }
+
+    // Theme management
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        
+        const icon = document.querySelector('#theme-toggle i');
+        if (icon) {
+            icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+        
+        // Save theme preference
+        localStorage.setItem('theme', newTheme);
+        
+        this.showNotification(`🌙 Theme switched to ${newTheme}`, 'info');
+    }
+
+    // Real-time updates
+    startRealTimeUpdates() {
+        this.updateInterval = setInterval(async () => {
+            try {
+                await this.loadDashboardData();
+                this.updateCharts();
+            } catch (error) {
+                console.error('Real-time update failed:', error);
+            }
+        }, 30000); // Update every 30 seconds
+    }
+
+    // Loading overlay management
+    showLoadingOverlay() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
+    }
+
+    hideLoadingOverlay() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+
+    // Notification system
+    showNotification(message, type = 'info') {
+        if (!this.notificationContainer) {
+            this.notificationContainer = document.getElementById('notification-container');
+        }
+
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type} glass-effect fade-in`;
+        
+        const icon = this.getNotificationIcon(type);
+        
+        notification.innerHTML = `
+            <div class="notification-content">
+                <span class="notification-icon">${icon}</span>
+                <span class="notification-message">${message}</span>
+            </div>
+            <button class="notification-close">
+                <i class="fas fa-times"></i>
+            </button>
         `;
-        errorDiv.textContent = message;
-        
-        document.body.appendChild(errorDiv);
-        
+
+        // Add close functionality
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.addEventListener('click', () => {
+            notification.remove();
+        });
+
+        this.notificationContainer.appendChild(notification);
+
+        // Auto-remove after 5 seconds
         setTimeout(() => {
-            errorDiv.remove();
+            if (notification.parentNode) {
+                notification.remove();
+            }
         }, 5000);
     }
-    
-    startAutoRefresh() {
-        // Refresh data every 5 minutes
-        this.refreshInterval = setInterval(() => {
-            this.loadDashboard();
-        }, 5 * 60 * 1000);
+
+    getNotificationIcon(type) {
+        const icons = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️'
+        };
+        return icons[type] || icons.info;
     }
-    
-    stopAutoRefresh() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
+
+    // Utility methods
+    debounceSearch(query) {
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            this.performSearch();
+        }, 500);
+    }
+
+    // Cleanup
+    destroy() {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
         }
+        
+        // Destroy charts
+        Object.values(this.charts).forEach(chart => {
+            if (chart && typeof chart.destroy === 'function') {
+                chart.destroy();
+            }
+        });
     }
 }
 
-// Add score classes to CSS
-const style = document.createElement('style');
-style.textContent = `
-    .score-excellent {
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-        border: 1px solid #10b981;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-    
-    .score-good {
-        background: rgba(59, 130, 246, 0.1);
-        color: #3b82f6;
-        border: 1px solid #3b82f6;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-    
-    .score-average {
-        background: rgba(245, 158, 11, 0.1);
-        color: #f59e0b;
-        border: 1px solid #f59e0b;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-    
-    .score-poor {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-        border: 1px solid #ef4444;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-    
-    .content-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-    }
-    
-    .content-user {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    
-    .user-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        color: var(--white);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.875rem;
-    }
-    
-    .user-info h4 {
-        font-weight: 600;
-        color: var(--gray-900);
-        margin-bottom: 0.25rem;
-        font-size: 0.875rem;
-    }
-    
-    .user-info p {
-        font-size: 0.75rem;
-        color: var(--gray-600);
-    }
-    
-    .content-text {
-        color: var(--gray-700);
-        line-height: 1.6;
-        margin-bottom: 1rem;
-        font-size: 0.875rem;
-    }
-    
-    .content-engagement {
-        display: flex;
-        gap: 1rem;
-        font-size: 0.75rem;
-        color: var(--gray-500);
-    }
-    
-    .engagement-item {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-    
-    .engagement-item i {
-        font-size: 0.75rem;
-    }
-`;
-
-document.head.appendChild(style);
-
 // Initialize dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new NationRadarDashboard();
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    // Update theme toggle icon
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        const icon = themeToggle.querySelector('i');
+        if (icon) {
+            icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+    }
+    
+    // Initialize dashboard
+    window.nationRadarDashboard = new NationRadarDashboard();
 });
 
-// Add some smooth animations
-document.addEventListener('DOMContentLoaded', () => {
-    // Animate elements on scroll
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-            }
-        });
-    }, observerOptions);
-    
-    // Observe all content sections
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.style.opacity = '0';
-        section.style.transform = 'translateY(20px)';
-        section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(section);
-    });
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (window.nationRadarDashboard) {
+        window.nationRadarDashboard.destroy();
+    }
 });
