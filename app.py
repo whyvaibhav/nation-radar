@@ -56,8 +56,11 @@ def serve_frontend():
         index_path = os.path.join(FRONTEND_DIR, 'index.html')
         if not os.path.exists(index_path):
             return f"index.html not found in: {FRONTEND_DIR}", 500
-            
-        return send_from_directory(FRONTEND_DIR, 'index.html')
+        
+        # Add CSP headers to allow JavaScript execution
+        response = send_from_directory(FRONTEND_DIR, 'index.html')
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;"
+        return response
     except Exception as e:
         return f"Error serving frontend: {str(e)}", 500
 
@@ -68,8 +71,12 @@ def serve_static(path):
         # Check if the directory exists
         if not os.path.exists(FRONTEND_DIR):
             return f"Frontend directory not found: {FRONTEND_DIR}", 500
-            
-        return send_from_directory(FRONTEND_DIR, path)
+        
+        # Add CSP headers for JavaScript files
+        response = send_from_directory(FRONTEND_DIR, path)
+        if path.endswith('.js') or path.endswith('.html'):
+            response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;"
+        return response
     except Exception as e:
         return f"Error serving static file {path}: {str(e)}", 500
 
