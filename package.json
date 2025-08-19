@@ -1,0 +1,17 @@
+{
+  "name": "nation-radar-integrated",
+  "version": "1.0.0",
+  "description": "Nation Radar - Crestal Network Analytics Dashboard",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "start": "cd frontend && npx serve out",
+    "dev": "cd frontend && npm run dev"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "workspaces": [
+    "frontend"
+  ]
+}
