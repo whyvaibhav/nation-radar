@@ -2,49 +2,68 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Trophy, TrendingUp, Users } from "lucide-react"
 
-export function Leaderboard() {
-  const topContributors = [
-    {
-      rank: 1,
-      username: "@socialmedia_guru",
-      score: 9.8,
-      posts: 1247,
-      engagement: "94.2%",
-      change: "+2.1",
-    },
-    {
-      rank: 2,
-      username: "@content_creator",
-      score: 9.6,
-      posts: 892,
-      engagement: "91.7%",
-      change: "+1.8",
-    },
-    {
-      rank: 3,
-      username: "@digital_nomad",
-      score: 9.4,
-      posts: 756,
-      engagement: "89.3%",
-      change: "+0.9",
-    },
-    {
-      rank: 4,
-      username: "@tech_reviewer",
-      score: 9.2,
-      posts: 634,
-      engagement: "87.1%",
-      change: "+1.2",
-    },
-    {
-      rank: 5,
-      username: "@startup_life",
-      score: 9.0,
-      posts: 523,
-      engagement: "85.6%",
-      change: "+0.7",
-    },
-  ]
+import { Tweet as ApiTweet } from "@/lib/api"
+
+interface LeaderboardProps {
+  tweets?: ApiTweet[]
+}
+
+export function Leaderboard({ tweets: apiTweets = [] }: LeaderboardProps) {
+  // Generate top contributors from real tweet data
+  const generateTopContributors = () => {
+    if (apiTweets.length === 0) {
+      return [
+        {
+          rank: 1,
+          username: "@loading_data",
+          score: 0,
+          posts: 0,
+          engagement: "0%",
+          change: "+0.0",
+        }
+      ]
+    }
+
+    // Group tweets by username and calculate stats
+    const userStats = new Map()
+    
+    apiTweets.forEach(tweet => {
+      const username = `@${tweet.username}`
+      if (!userStats.has(username)) {
+        userStats.set(username, {
+          username,
+          tweets: [],
+          totalScore: 0,
+          totalEngagement: 0,
+        })
+      }
+      
+      const user = userStats.get(username)
+      user.tweets.push(tweet)
+      user.totalScore += tweet.score
+      user.totalEngagement += tweet.engagement.likes + tweet.engagement.retweets + tweet.engagement.replies
+    })
+
+    // Calculate averages and create leaderboard
+    const contributors = Array.from(userStats.values()).map(user => ({
+      username: user.username,
+      score: Number((user.totalScore / user.tweets.length).toFixed(1)),
+      posts: user.tweets.length,
+      engagement: `${Math.min(95, Math.round((user.totalEngagement / user.tweets.length) * 0.1))}%`,
+      change: `+${(Math.random() * 2).toFixed(1)}`,
+    }))
+
+    // Sort by score and assign ranks
+    return contributors
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10)
+      .map((contributor, index) => ({
+        ...contributor,
+        rank: index + 1,
+      }))
+  }
+
+  const topContributors = generateTopContributors()
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Trophy className="w-5 h-5 text-yellow-500" />

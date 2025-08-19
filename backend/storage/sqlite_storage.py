@@ -97,6 +97,30 @@ class SQLiteStorage:
         self.conn.commit()
         return True
 
+    def get_all_tweets(self) -> list:
+        """Get all tweets from the database"""
+        cur = self.conn.cursor()
+        cur.execute("""
+            SELECT id, username, text, score, url, created_at, engagement
+            FROM tweets 
+            ORDER BY score DESC
+        """)
+        
+        tweets = []
+        for row in cur.fetchall():
+            tweet = {
+                'id': row[0],
+                'username': row[1],
+                'text': row[2],
+                'score': row[3],
+                'url': row[4],
+                'created_at': row[5],
+                'engagement': json.loads(row[6]) if row[6] else {}
+            }
+            tweets.append(tweet)
+        
+        return tweets
+
     def close(self) -> None:
         try:
             self.conn.close()

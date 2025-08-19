@@ -11,10 +11,37 @@ interface TrendingContentProps {
 }
 
 export function TrendingContent({ tweets }: TrendingContentProps) {
-  const [visibleTweets, setVisibleTweets] = useState<number[]>([])
+  const [visibleTweets, setVisibleTweets] = useState<(string | number)[]>([])
+
+  // Helper functions defined first
+  const formatTime = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp)
+      const now = new Date()
+      const diffMs = now.getTime() - date.getTime()
+      const diffMins = Math.floor(diffMs / 60000)
+      const diffHours = Math.floor(diffMs / 3600000)
+      const diffDays = Math.floor(diffMs / 86400000)
+      
+      if (diffMins < 1) return 'Just now'
+      if (diffMins < 60) return `${diffMins}m ago`
+      if (diffHours < 24) return `${diffHours}h ago`
+      if (diffDays < 7) return `${diffDays}d ago`
+      
+      return date.toLocaleDateString()
+    } catch {
+      return 'Unknown'
+    }
+  }
+
+  const getSentimentFromScore = (score: number) => {
+    if (score >= 1.5) return "positive"
+    if (score <= 0.5) return "negative"
+    return "neutral"
+  }
 
   // Use real tweets if available, otherwise show demo data
-  const trendingTweets = tweets.length > 0 ? tweets.slice(0, 3).map((tweet, index) => ({
+  const trendingTweets = tweets.length > 0 ? tweets.slice(0, 5).map((tweet, index) => ({
     id: tweet.id,
     author: `@${tweet.username}`,
     content: tweet.text.length > 100 ? tweet.text.substring(0, 100) + '...' : tweet.text,
@@ -57,31 +84,7 @@ export function TrendingContent({ tweets }: TrendingContentProps) {
     }
   }
 
-  const formatTime = (timestamp: string) => {
-    try {
-      const date = new Date(timestamp)
-      const now = new Date()
-      const diffMs = now.getTime() - date.getTime()
-      const diffMins = Math.floor(diffMs / 60000)
-      const diffHours = Math.floor(diffMs / 3600000)
-      const diffDays = Math.floor(diffMs / 86400000)
-      
-      if (diffMins < 1) return 'Just now'
-      if (diffMins < 60) return `${diffMins}m ago`
-      if (diffHours < 24) return `${diffHours}h ago`
-      if (diffDays < 7) return `${diffDays}d ago`
-      
-      return date.toLocaleDateString()
-    } catch {
-      return 'Unknown'
-    }
-  }
 
-  const getSentimentFromScore = (score: number) => {
-    if (score >= 7) return "positive"
-    if (score <= 3) return "negative"
-    return "neutral"
-  }
 
   return (
     <Card className="bg-card border-border hover:shadow-lg hover:shadow-primary/10 transition-all duration-300">

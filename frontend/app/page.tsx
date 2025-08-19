@@ -8,9 +8,9 @@ import { ActivityFeed } from "@/components/activity-feed"
 import { ParticleBackground } from "@/components/particle-background"
 import { LoadingOverlay } from "@/components/loading-overlay"
 import { HeroSection } from "@/components/hero-section"
-import { CommandTerminal } from "@/components/command-terminal"
+
 import { DataRain } from "@/components/data-rain"
-import { LiveSocialFeed } from "@/components/live-social-feed"
+
 import { apiService, Tweet, SystemStats } from "@/lib/api"
 
 export default function Dashboard() {
@@ -58,7 +58,16 @@ export default function Dashboard() {
       setIsLoaded(true)
     }, 2000)
 
-    return () => clearTimeout(timer)
+    // Set up auto-refresh every 30 seconds for real-time updates
+    const refreshInterval = setInterval(() => {
+      console.log('🔄 Auto-refreshing data...')
+      fetchData()
+    }, 30000) // 30 seconds
+
+    return () => {
+      clearTimeout(timer)
+      clearInterval(refreshInterval)
+    }
   }, [])
 
   if (isLoading) {
@@ -98,8 +107,6 @@ export default function Dashboard() {
           >
             <div className="xl:col-span-2 space-y-8">
               <TrendingContent tweets={tweets} />
-              <LiveSocialFeed tweets={tweets.slice(0, 10)} />
-              <CommandTerminal />
               <ActivityFeed tweets={tweets.slice(0, 15)} />
             </div>
             <div className="xl:col-span-1">

@@ -5,59 +5,81 @@ import { Badge } from "@/components/ui/badge"
 import { Activity, MessageSquare, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react"
 import { useState, useEffect } from "react"
 
-export function ActivityFeed() {
+import { Tweet as ApiTweet } from "@/lib/api"
+
+interface ActivityFeedProps {
+  tweets?: ApiTweet[]
+}
+
+export function ActivityFeed({ tweets: apiTweets = [] }: ActivityFeedProps) {
   const [visibleActivities, setVisibleActivities] = useState<number[]>([])
   const [newActivity, setNewActivity] = useState(false)
 
-  const activities = [
-    {
+  // Generate essential activities from real tweet data
+  const generateActivities = () => {
+    if (apiTweets.length === 0) {
+      return [
+        {
+          id: 1,
+          type: "loading",
+          title: "Loading Real Data",
+          description: "Connecting to Crestal Network backend...",
+          timestamp: "now",
+          status: "info",
+          icon: Activity,
+        }
+      ]
+    }
+
+    const activities = []
+    
+    // Analysis summary
+    const avgScore = (apiTweets.reduce((sum, t) => sum + t.score, 0) / apiTweets.length).toFixed(2)
+    activities.push({
       id: 1,
       type: "analysis",
-      title: "Content Analysis Complete",
-      description: "Analyzed 1,247 new tweets in the last hour",
+      title: "Data Analysis Complete",
+      description: `Processed ${apiTweets.length} tweets • Average quality score: ${avgScore}`,
       timestamp: "2 minutes ago",
       status: "success",
       icon: CheckCircle,
-    },
-    {
+    })
+
+    // Top content alert
+    const topTweet = apiTweets.reduce((max, tweet) => tweet.score > max.score ? tweet : max, apiTweets[0])
+    activities.push({
       id: 2,
       type: "trending",
-      title: "New Trending Topic Detected",
-      description: "#TechInnovation is gaining momentum (+340% mentions)",
+      title: "High-Quality Content Alert",
+      description: `@${topTweet.username} posted exceptional content (Score: ${topTweet.score.toFixed(2)})`,
       timestamp: "15 minutes ago",
       status: "info",
       icon: TrendingUp,
-    },
-    {
+    })
+
+    // Sentiment overview
+    const positiveCount = apiTweets.filter(t => t.score >= 1.5).length
+    const percentage = Math.round((positiveCount / apiTweets.length) * 100)
+    
+    activities.push({
       id: 3,
       type: "alert",
-      title: "Sentiment Alert",
-      description: "Negative sentiment spike detected for @brand_account",
+      title: "Community Sentiment",
+      description: `${percentage}% positive sentiment • Community engagement is ${percentage > 70 ? 'excellent' : percentage > 40 ? 'good' : 'moderate'}`,
       timestamp: "32 minutes ago",
-      status: "warning",
+      status: percentage > 70 ? "success" : percentage > 40 ? "info" : "warning",
       icon: AlertTriangle,
-    },
-    {
-      id: 4,
-      type: "engagement",
-      title: "High Engagement Post",
-      description: "Post by @influencer_user reached 10K interactions",
-      timestamp: "1 hour ago",
-      status: "success",
-      icon: MessageSquare,
-    },
-    {
-      id: 5,
-      type: "analysis",
-      title: "Weekly Report Generated",
-      description: "Social media performance report for last week is ready",
-      timestamp: "2 hours ago",
-      status: "info",
-      icon: Activity,
-    },
-  ]
+    })
+
+    return activities
+  }
+
+  const activities = generateActivities()
 
   useEffect(() => {
+    // Reset visible activities when tweets change
+    setVisibleActivities([])
+    
     activities.forEach((activity, index) => {
       setTimeout(() => {
         setVisibleActivities((prev) => [...prev, activity.id])
@@ -71,7 +93,7 @@ export function ActivityFeed() {
     }, 10000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [apiTweets])
 
   const getStatusColor = (status: string) => {
     switch (status) {

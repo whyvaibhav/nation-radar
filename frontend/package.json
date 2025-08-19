@@ -1,13 +1,14 @@
 {
-  "name": "my-v0-project",
-  "version": "0.1.0",
+  "name": "nation-radar-dashboard",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "build": "next build",
-    "build:static": "next build",
+    "build:static": "next build && next export",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "export": "next export"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -58,6 +59,7 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "vaul": "^1.1.2",
     "zod": "3.25.67"
   },
   "devDependencies": {

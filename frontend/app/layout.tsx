@@ -25,17 +25,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={graphiqueFont.variable}>
       <head>
         <meta httpEquiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:; font-src * data: blob:; connect-src * data: blob:;" />
-        <style>{`
-html {
-  font-family: ${graphiqueFont.style.fontFamily};
-  --font-sans: ${graphiqueFont.variable};
-}
-        `}</style>
       </head>
-      <body className={`${graphiqueFont.variable} font-sans`}>{children}</body>
+      <body className="font-sans">{children}</body>
     </html>
   )
 }

@@ -182,10 +182,14 @@
     box-sizing: border-box;
   }
 
+  html {
+    font-family: var(--font-graphique, 'Graphique W01 Regular', 'Graphique W01', 'Arial', 'Helvetica', sans-serif);
+  }
+
   body {
     background: #000000; /* Changed to pure black background */
     color: var(--text-secondary);
-    font-family: 'Graphique W01 Regular', 'Graphique W01', 'Arial', 'Helvetica', sans-serif;
+    font-family: inherit;
     font-size: 1rem; /* Increased from 0.875rem for better visibility */
     line-height: 1.6; /* Increased from 1.5 for better readability */
     margin: 0;
