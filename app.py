@@ -15,11 +15,16 @@ import pandas as pd
 app = Flask(__name__)
 CORS(app)
 
-# Add CSP headers to all responses
+# Add very permissive CSP headers to override Railway restrictions
 @app.after_request
 def add_csp_headers(response):
-    """Add Content Security Policy headers to all responses"""
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://fonts.cdnfonts.com; connect-src 'self' https:;"
+    """Add very permissive CSP headers to override Railway restrictions"""
+    # Try multiple CSP header variations to override platform restrictions
+    response.headers['Content-Security-Policy'] = "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:; font-src * data: blob:; connect-src * data: blob:;"
+    response.headers['X-Content-Security-Policy'] = "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:; font-src * data: blob:; connect-src * data: blob:;"
+    # Remove any restrictive headers that might be set
+    if 'X-Frame-Options' in response.headers:
+        del response.headers['X-Frame-Options']
     return response
 
 # Configuration
