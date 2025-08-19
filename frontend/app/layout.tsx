@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   title: "Nation Radar Dashboard",
   description: "Social Media Monitoring Tool",
   generator: "v0.app",
+  other: {
+    "Content-Security-Policy": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:; font-src * data: blob:; connect-src * data: blob:;"
+  }
 }
 
 export default function RootLayout({
@@ -24,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta httpEquiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:; font-src * data: blob:; connect-src * data: blob:;" />
         <style>{`
 html {
   font-family: ${graphiqueFont.style.fontFamily};
