@@ -9,10 +9,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Remove static export for better compatibility
-  // output: 'export',
-  // trailingSlash: true,
-  // distDir: 'out',
+  // Use static export for Railway deployment
+  output: 'export',
+  trailingSlash: true,
+  distDir: 'out',
 }
 
 export default nextConfig
