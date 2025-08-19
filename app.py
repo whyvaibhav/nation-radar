@@ -31,7 +31,7 @@ def add_csp_headers(response):
 VPS_API_URL = os.environ.get('VPS_API_URL', 'http://143.198.226.161:5001')
 
 # Get the absolute path to the frontend directory
-FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'out')  # Next.js build output
+FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))  # Root directory where built files are copied
 
 @app.route('/debug')
 def debug_info():
@@ -42,9 +42,9 @@ def debug_info():
         frontend_exists = os.path.exists(FRONTEND_DIR)
         index_exists = os.path.exists(os.path.join(FRONTEND_DIR, 'index.html')) if frontend_exists else False
         
-        # Also check if the frontend/out directory exists
-        frontend_out_exists = os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'out'))
-        frontend_out_contents = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'out')) if frontend_out_exists else []
+        # Check if the built frontend files exist in root
+        built_files_exist = os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'index.html'))
+        built_files = os.listdir(os.path.dirname(os.path.abspath(__file__))) if built_files_exist else []
         
         debug_info = {
             "current_working_directory": current_dir,
@@ -52,8 +52,8 @@ def debug_info():
             "frontend_dir_path": FRONTEND_DIR,
             "frontend_dir_exists": frontend_exists,
             "index_html_exists": index_exists,
-            "frontend_out_exists": frontend_out_exists,
-            "frontend_out_contents": frontend_out_contents,
+            "built_files_exist": built_files_exist,
+            "built_files": built_files,
             "directory_contents": os.listdir(app_dir) if os.path.exists(app_dir) else [],
             "frontend_contents": os.listdir(FRONTEND_DIR) if frontend_exists else []
         }
