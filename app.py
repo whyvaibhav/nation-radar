@@ -57,9 +57,9 @@ def serve_frontend():
         if not os.path.exists(index_path):
             return f"index.html not found in: {FRONTEND_DIR}", 500
         
-        # Add CSP headers to allow JavaScript execution
+        # Add CSP headers to allow JavaScript execution and fonts
         response = send_from_directory(FRONTEND_DIR, 'index.html')
-        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;"
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://fonts.cdnfonts.com; connect-src 'self' https:;"
         return response
     except Exception as e:
         return f"Error serving frontend: {str(e)}", 500
@@ -72,10 +72,10 @@ def serve_static(path):
         if not os.path.exists(FRONTEND_DIR):
             return f"Frontend directory not found: {FRONTEND_DIR}", 500
         
-        # Add CSP headers for JavaScript files
+        # Add CSP headers for JavaScript files and fonts
         response = send_from_directory(FRONTEND_DIR, path)
         if path.endswith('.js') or path.endswith('.html'):
-            response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;"
+            response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://fonts.cdnfonts.com; connect-src 'self' https:;"
         return response
     except Exception as e:
         return f"Error serving static file {path}: {str(e)}", 500
