@@ -86,3 +86,27 @@ backend/tweets.db-*
 !backend/storage/
 !backend/fetchers/
 !backend/*.py
+
+# Next.js build output
+.next/
+out/
+dist/
+
+# Dependencies
+node_modules/
+
+# Build artifacts
+*.node
+*.exe
+*.dll
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# Next.js specific
+.next/
+out/
+.next/cache/
+.next/server/
+.next/static/

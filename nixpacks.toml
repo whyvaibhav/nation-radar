@@ -8,4 +8,7 @@ cmds = ["cd frontend && npm install"]
 cmds = ["cd frontend && npm run build"]
 
 [start]
-cmd = "cd frontend && npx serve out"
+cmd = "cd frontend && npm run serve"
+
+[variables]
+NODE_ENV = "production"

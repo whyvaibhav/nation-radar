@@ -6,13 +6,9 @@
   "scripts": {
     "build": "cd frontend && npm install && npm run build",
     "start": "cd frontend && npx serve out",
-    "dev": "cd frontend && npm run dev",
-    "install-deps": "cd frontend && npm install"
+    "dev": "cd frontend && npm run dev"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "workspaces": [
-    "frontend"
-  ]
+  }
 }
