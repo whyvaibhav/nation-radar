@@ -3,9 +3,8 @@ Dockerfile*
 docker-compose*
 .dockerignore
 
-# Ignore build artifacts
+# Ignore build artifacts (but keep out/ for Express server)
 .next/
-out/
 node_modules/
 dist/
 
