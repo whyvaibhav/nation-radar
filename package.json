@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "build": "cd frontend && npm install && npm run build",
-    "start": "cd frontend && npx serve out -p $PORT",
+    "start": "cd frontend && node server.js",
     "dev": "cd frontend && npm run dev"
   },
   "engines": {
