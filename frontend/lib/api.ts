@@ -1,8 +1,10 @@
 // API service for Nation Radar backend
 // Updated to connect to VPS at 143.198.226.161:5000
+// Last updated: 2025-08-20 20:00 UTC - Force rebuild
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://143.198.226.161:5000';
 
 console.log('🔗 API Base URL:', API_BASE);
+console.log('🕐 Build timestamp:', new Date().toISOString());
 
 export interface Tweet {
   id: string;
