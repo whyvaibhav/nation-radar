@@ -7,7 +7,7 @@
     "build:static": "next build && next export",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "node server.js",
+    "start": "npx serve out -p $PORT -a 0.0.0.0",
     "serve": "npx serve out",
     "export": "next export"
   },
@@ -48,6 +48,7 @@
     "embla-carousel-react": "8.5.1",
     "express": "^4.18.2",
     "geist": "^1.3.1",
+    "http-server": "^14.1.1",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
     "next": "^14.2.32",
