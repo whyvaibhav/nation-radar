@@ -2,7 +2,8 @@ const express = require('express');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+// Railway will set PORT environment variable, don't fallback to 8080
+const PORT = process.env.PORT || 3000;
 
 // Enable CORS
 app.use((req, res, next) => {
@@ -43,6 +44,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`🔗 API Base: ${process.env.NEXT_PUBLIC_API_URL || 'http://143.198.226.161:5000'}`);
   console.log(`🔗 Railway PORT: ${process.env.PORT || 'not set'}`);
+  console.log(`🔗 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Graceful shutdown
