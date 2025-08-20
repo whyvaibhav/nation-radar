@@ -41,6 +41,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   http://localhost:${PORT}`);
   console.log(`   http://0.0.0.0:${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  console.log(`🔗 API Base: ${process.env.NEXT_PUBLIC_API_URL || 'http://143.198.226.161:5000'}`);
 });
 
 // Graceful shutdown

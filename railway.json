@@ -2,6 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "variables": {
     "NODE_ENV": "production",
-    "NEXT_TELEMETRY_DISABLED": "1"
+    "NEXT_TELEMETRY_DISABLED": "1",
+    "NEXT_PUBLIC_API_URL": "http://143.198.226.161:5000"
   }
 }
