@@ -1,11 +1,11 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Activity, MessageSquare, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react"
 import { useState, useEffect } from "react"
 
-import { Tweet as ApiTweet } from "../app/api"
+import { Tweet as ApiTweet } from "../lib/api"
 
 interface ActivityFeedProps {
   tweets?: ApiTweet[]

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Heart, MessageCircle, Repeat2, Share, TrendingUp } from "lucide-react"
 import { useState, useEffect } from "react"
-import { Tweet } from "../app/api"
+import { Tweet } from "../lib/api"
 
 interface TrendingContentProps {
   tweets: Tweet[]

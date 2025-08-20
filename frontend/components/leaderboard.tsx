@@ -1,8 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Trophy, TrendingUp, Users } from "lucide-react"
+"use client"
 
-import { Tweet as ApiTweet } from "../app/api"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Trophy, TrendingUp, Users, Star } from "lucide-react"
+
+import { Tweet as ApiTweet } from "../lib/api"
 
 interface LeaderboardProps {
   tweets?: ApiTweet[]
