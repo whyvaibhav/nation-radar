@@ -1,4 +1,5 @@
 // API service for Nation Radar backend
+// Updated to connect to VPS at 143.198.226.161:5000
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://143.198.226.161:5000';
 
 export interface Tweet {
