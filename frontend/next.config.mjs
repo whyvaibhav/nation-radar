@@ -13,6 +13,9 @@ const nextConfig = {
   output: 'export',
   trailingSlash: true,
   distDir: 'out',
+  experimental: {
+    esmExternals: 'loose'
+  }
 }
 
 export default nextConfig
