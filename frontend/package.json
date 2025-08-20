@@ -7,7 +7,7 @@
     "build:static": "next build && next export",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "npx http-server out -p $PORT -a 0.0.0.0 --cors",
+    "start": "node server.js",
     "serve": "npx serve out",
     "export": "next export"
   },
@@ -46,6 +46,7 @@
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
+    "express": "^4.18.2",
     "geist": "^1.3.1",
     "http-server": "^14.1.1",
     "input-otp": "1.4.1",
