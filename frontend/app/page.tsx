@@ -11,7 +11,7 @@ import { HeroSection } from "@/components/hero-section"
 
 import { DataRain } from "@/components/data-rain"
 
-import { apiService, Tweet, SystemStats } from "@/lib/api"
+import { apiService, Tweet, SystemStats } from "../lib/api"
 
 export default function Dashboard() {
   const [isLoaded, setIsLoaded] = useState(false)

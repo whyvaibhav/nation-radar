@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Activity, MessageSquare, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react"
 import { useState, useEffect } from "react"
 
-import { Tweet as ApiTweet } from "@/lib/api"
+import { Tweet as ApiTweet } from "../lib/api"
 
 interface ActivityFeedProps {
   tweets?: ApiTweet[]
