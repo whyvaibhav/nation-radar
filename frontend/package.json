@@ -7,7 +7,7 @@
     "build:static": "next build && next export",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "npx http-server out -p 8080 -a 0.0.0.0",
+    "start": "npx http-server out -p $PORT -a 0.0.0.0 --cors",
     "serve": "npx serve out",
     "export": "next export"
   },
