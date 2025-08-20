@@ -7,7 +7,7 @@
     "build:static": "next build && next export",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start",
+    "start": "npx serve out -p $PORT",
     "serve": "npx serve out",
     "export": "next export"
   },
