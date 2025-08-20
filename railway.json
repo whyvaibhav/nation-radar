@@ -9,6 +9,7 @@
   },
   "variables": {
     "RAILWAY_STATIC_URL": "https://nation-radar.up.railway.app",
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "NEXT_TELEMETRY_DISABLED": "1"
   }
 }

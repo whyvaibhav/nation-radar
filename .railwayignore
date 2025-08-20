@@ -1,0 +1,15 @@
+# Ignore any Docker files that might be detected
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Ignore build artifacts
+.next/
+out/
+node_modules/
+dist/
+
+# Ignore development files
+*.log
+.env.local
+.env.development
