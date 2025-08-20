@@ -30,6 +30,10 @@ wheels/
 *.egg
 MANIFEST
 
+# Keep frontend/lib directory (contains API service)
+!frontend/lib/
+!frontend/lib/*
+
 # Virtual environments
 venv/
 env/
