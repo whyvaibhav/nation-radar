@@ -20,7 +20,13 @@ from nation_agent import get_agent_score, format_tweet_for_agent
 from fetchers.new_twitter_fetcher import NewTwitterFetcher
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend
+CORS(app, origins=[
+    "https://nation-radar.up.railway.app",
+    "https://*.up.railway.app",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "*"
+])  # Enable CORS for Railway frontend
 
 # Serve static files from the frontend directory
 @app.route('/')
