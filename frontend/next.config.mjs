@@ -9,10 +9,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Use static export for Railway deployment
-  output: 'export',
-  trailingSlash: true,
-  distDir: 'out',
+  output: 'standalone',
+  distDir: '.next',
   experimental: {
     esmExternals: 'loose'
   },
