@@ -6,6 +6,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://143.198.226.161';
 console.log('🔗 API Base URL:', API_BASE);
 console.log('🕐 Build timestamp:', new Date().toISOString());
 console.log('🚀 Force rebuild timestamp:', Date.now());
+console.log('🔧 Environment variable check:', process.env.NEXT_PUBLIC_API_URL ? 'SET' : 'NOT SET');
+console.log('🔧 NODE_ENV:', process.env.NODE_ENV);
 
 export interface Tweet {
   id: string;
