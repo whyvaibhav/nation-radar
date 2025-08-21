@@ -27,7 +27,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Serve static files from the 'out' directory
+// Serve static files from the static export directory
 app.use(express.static(path.join(__dirname, 'out')));
 
 // Handle all routes by serving index.html (for Next.js static export)

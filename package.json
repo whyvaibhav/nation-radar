@@ -4,7 +4,7 @@
   "description": "Nation Radar - Crestal Network Analytics Dashboard",
   "private": true,
   "scripts": {
-    "build": "cd frontend && npm install && echo 'Building with API URL:' $NEXT_PUBLIC_API_URL && npm run build",
+    "build": "cd frontend && npm install && echo 'Building with API URL:' $NEXT_PUBLIC_API_URL && echo 'NODE_ENV:' $NODE_ENV && npm run build && echo 'Build completed successfully'",
     "start": "cd frontend && node server.js",
     "dev": "cd frontend && npm run dev",
     "force-rebuild": "echo 'Force rebuild $(date)' && cd frontend && npm install && npm run build"

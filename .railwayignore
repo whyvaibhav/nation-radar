@@ -10,5 +10,4 @@ dist/
 
 # Ignore development files
 *.log
-.env.local
 .env.development

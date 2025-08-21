@@ -15,7 +15,10 @@ const nextConfig = {
   distDir: 'out',
   experimental: {
     esmExternals: 'loose'
-  }
+  },
+  // Ensure static export works properly
+  assetPrefix: '',
+  basePath: ''
 }
 
 export default nextConfig
