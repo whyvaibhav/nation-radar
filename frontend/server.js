@@ -3,6 +3,8 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+console.log('Starting server with PORT:', PORT);
+console.log('Environment:', process.env.NODE_ENV);
 
 // Enable CORS
 app.use((req, res, next) => {

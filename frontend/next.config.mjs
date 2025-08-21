@@ -9,13 +9,13 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  output: 'standalone',
-  distDir: '.next',
+  output: 'export',
+  distDir: 'out',
   experimental: {
     esmExternals: 'loose'
   },
-  // Ensure static export works properly
-  assetPrefix: '',
+  // Configuration for Railway deployment
+  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
   basePath: ''
 }
 
