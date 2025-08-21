@@ -7,14 +7,12 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    unoptimized: true
   },
-  output: 'export',
-  distDir: 'out',
   experimental: {
     esmExternals: 'loose'
   },
-  // Configuration for Railway deployment
+  // Production settings
   assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
   basePath: ''
 }

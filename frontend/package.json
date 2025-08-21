@@ -3,12 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "next build && echo 'Static export completed'",
-    "build:static": "next build && next export",
+    "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "node server.js",
-    "serve": "npx serve out",
+    "start": "next start",
     "export": "next export"
   },
   "dependencies": {
