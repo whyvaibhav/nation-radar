@@ -1,6 +1,6 @@
 // API service for Nation Radar backend
 // Updated to connect to VPS at 143.198.226.161:5000
-// Last updated: 2025-08-20 20:00 UTC - Force rebuild
+// Last updated: 2025-08-21 14:30 UTC - Force Railway rebuild with HTTPS
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://143.198.226.161';
 
 console.log('🔗 API Base URL:', API_BASE);
