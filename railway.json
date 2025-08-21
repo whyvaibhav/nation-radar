@@ -4,12 +4,15 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npm start",
-    "buildCommand": "npm run build"
+    "startCommand": "cd frontend && npm run start",
+    "buildCommand": "cd frontend && npm install && npm run build",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 100
   },
   "variables": {
     "NODE_ENV": "production",
     "NEXT_TELEMETRY_DISABLED": "1",
-    "NEXT_PUBLIC_API_URL": "https://143.198.226.161"
+    "NEXT_PUBLIC_API_URL": "https://143.198.226.161",
+    "PORT": "3000"
   }
 }
