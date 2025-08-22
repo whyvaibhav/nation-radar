@@ -36,7 +36,7 @@ export function TrendingContent({ tweets }: TrendingContentProps) {
 
   const getSentimentFromScore = (score: number) => {
     if (score >= 1.5) return "positive"
-    if (score <= 0.5) return "negative"
+    if (score <= 0.1) return "negative"  // Lowered threshold for 0-2 scale
     return "neutral"
   }
 

@@ -57,15 +57,17 @@ export function ActivityFeed({ tweets: apiTweets = [] }: ActivityFeedProps) {
       icon: TrendingUp,
     })
 
-    // Sentiment overview
+    // Sentiment overview - adjusted for 0-2 scale
     const positiveCount = apiTweets.filter(t => t.score >= 1.5).length
+    const negativeCount = apiTweets.filter(t => t.score <= 0.1).length
+    const neutralCount = apiTweets.length - positiveCount - negativeCount
     const percentage = Math.round((positiveCount / apiTweets.length) * 100)
     
     activities.push({
       id: 3,
       type: "alert",
       title: "Community Sentiment",
-      description: `${percentage}% positive sentiment • Community engagement is ${percentage > 70 ? 'excellent' : percentage > 40 ? 'good' : 'moderate'}`,
+      description: `${percentage}% positive • ${Math.round((neutralCount / apiTweets.length) * 100)}% neutral • ${Math.round((negativeCount / apiTweets.length) * 100)}% low-quality`,
       timestamp: "32 minutes ago",
       status: percentage > 70 ? "success" : percentage > 40 ? "info" : "warning",
       icon: AlertTriangle,
