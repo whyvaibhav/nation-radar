@@ -57,9 +57,9 @@ export function ActivityFeed({ tweets: apiTweets = [] }: ActivityFeedProps) {
       icon: TrendingUp,
     })
 
-    // Sentiment overview - adjusted for 0-2 scale
-    const positiveCount = apiTweets.filter(t => t.score >= 1.5).length
-    const negativeCount = apiTweets.filter(t => t.score <= 0.1).length
+    // Sentiment overview - adjusted for your scoring logic
+    const positiveCount = apiTweets.filter(t => t.score >= 0.04).length
+    const negativeCount = apiTweets.filter(t => t.score <= 0.001).length
     const neutralCount = apiTweets.length - positiveCount - negativeCount
     const percentage = Math.round((positiveCount / apiTweets.length) * 100)
     
