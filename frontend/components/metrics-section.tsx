@@ -41,8 +41,8 @@ export function MetricsSection() {
     },
     {
       title: "Average Score",
-      value: "8.4/10",
-      rawValue: 8.4,
+      value: "1.4/2.0",
+      rawValue: 1.4,
       change: "+0.3",
       icon: BarChart3,
       trend: "up",
@@ -80,7 +80,7 @@ function MetricCard({ metric, index }: { metric: any; index: number }) {
 
   const animatedValue = useCountUp(
     metric.title === "Average Score"
-      ? metric.rawValue * 10
+      ? metric.rawValue
       : metric.rawValue > 1000000
         ? metric.rawValue / 1000000
         : metric.rawValue,
@@ -94,7 +94,7 @@ function MetricCard({ metric, index }: { metric: any; index: number }) {
 
   const formatValue = (value: number) => {
     if (metric.title === "Average Score") {
-      return `${(value / 10).toFixed(1)}/10`
+      return `${value.toFixed(2)}/2.0`
     }
     if (metric.title === "Content Analyzed") {
       return `${(value).toFixed(1)}M`

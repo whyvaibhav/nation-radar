@@ -103,7 +103,7 @@ export function HeroSection({ totalTweets, averageScore, contentAnalyzed, active
               Average Score
             </span>
             <span className="block text-4xl lg:text-5xl font-black mb-2" style={{ color: "#D0FF16" }}>
-              {animatedValues.averageScore.toFixed(1)}/10
+              {animatedValues.averageScore.toFixed(2)}/2.0
             </span>
             <div className="flex items-center justify-center gap-1 text-base font-medium" style={{ color: "#D0FF16" }}>
               <ArrowUp className="w-5 h-5" />
