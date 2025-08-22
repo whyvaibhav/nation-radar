@@ -168,7 +168,7 @@ def main():
     print(f"Loading config: keywords={KEYWORDS}, days_lookback={DAYS_LOOKBACK}, csv={CSV_FILENAME}")
     print("🚀 Starting Nation Radar Pipeline - NEW API VERSION")
     print("📊 Using: twitter293.p.rapidapi.com (the API that worked for @web3spectre)")
-    print("📊 API Quota: 20,000 requests/month | Collection: 6 keywords × 5 tweets = 30 tweets per run")
+
     print("⏰ Frequency: Weekly (every 7 days) | Monthly API usage: ~360 requests")
     
     # Use the new Twitter fetcher
