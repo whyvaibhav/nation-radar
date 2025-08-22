@@ -34,7 +34,7 @@ export default function Dashboard() {
         
         // Fetch data from API
         const [tweetsResponse, leaderboardResponse, statsResponse] = await Promise.all([
-          apiService.getTweets(50),
+          apiService.getTweets(100),  // Increased from 50 to 100
           apiService.getLeaderboard(20),
           apiService.getSystemStats()
         ])

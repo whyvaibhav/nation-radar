@@ -29,7 +29,7 @@ class NewTwitterFetcher:
         
         # Use the working parameters from HAR file
         params = {
-            "count": "20",  # Increased from 10 to 20
+            "count": "80",  # Increased from 20 to 80
             "category": "Top"  # This was the key - using "Top" category
         }
         

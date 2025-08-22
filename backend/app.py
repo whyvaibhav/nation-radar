@@ -61,7 +61,7 @@ def get_crestal_data():
     """Get Crestal tweet data from SQLite database"""
     try:
         format_type = request.args.get('format', 'json')
-        limit = int(request.args.get('limit', 50))  # Default limit of 50
+        limit = int(request.args.get('limit', 100))  # Default limit of 100 (increased from 50)
         
         # Import SQLite storage
         from storage.sqlite_storage import SQLiteStorage

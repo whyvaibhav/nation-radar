@@ -198,7 +198,7 @@ def main():
                 if not contains_ticker(tweet['text'], "NATION"):
                     continue  # Skip tweets that don't have $NATION exactly
                     
-            if count >= 5:  # Process 5 tweets per keyword (optimized for weekly collection)
+            if count >= 80:  # Process 80 tweets per keyword (increased from 5)
                 break
                 
             tweet_id = tweet.get('id')
