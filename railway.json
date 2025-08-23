@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npx serve frontend/out -p $PORT",
+    "startCommand": "cd frontend && npm start",
     "buildCommand": "npm run build"
   },
   "variables": {

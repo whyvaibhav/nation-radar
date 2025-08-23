@@ -6,7 +6,7 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start",
+    "start": "npx serve out -p $PORT",
     "export": "next export"
   },
   "dependencies": {
