@@ -186,6 +186,7 @@ def get_leaderboard():
     """Get top contributors leaderboard from SQLite database"""
     try:
         limit = int(request.args.get('limit', 20))  # Default top 20
+        print(f"🔍 Leaderboard request: limit={limit}")
         
         # Import SQLite storage
         from storage.sqlite_storage import SQLiteStorage
@@ -193,8 +194,10 @@ def get_leaderboard():
         
         # Get all tweets from database
         tweets = db_storage.get_all_tweets()
+        print(f"📊 Found {len(tweets) if tweets else 0} tweets in database")
         
         if not tweets:
+            print("⚠️ No tweets found in database")
             return jsonify({
                 'success': True,
                 'data': [],
@@ -205,9 +208,11 @@ def get_leaderboard():
         # Convert to DataFrame for easier processing
         import pandas as pd
         df = pd.DataFrame(tweets)
+        print(f"📈 DataFrame shape: {df.shape}")
         
         if len(df) > 0:
             df['score'] = pd.to_numeric(df['score'], errors='coerce').fillna(0)
+            print(f"🎯 Score range: {df['score'].min()} to {df['score'].max()}")
             
             # Group by username and calculate stats
             leaderboard = df.groupby('username').agg({
@@ -217,31 +222,37 @@ def get_leaderboard():
             # Flatten column names
             leaderboard.columns = ['avg_score', 'best_score', 'tweet_count']
             leaderboard = leaderboard.reset_index()
+            print(f"👥 Found {len(leaderboard)} unique users")
             
-                    # Sort by average score and limit results (increased default limit)
-        leaderboard = leaderboard.sort_values('avg_score', ascending=False).head(limit)
+            # Sort by average score and limit results
+            leaderboard = leaderboard.sort_values('avg_score', ascending=False).head(limit)
             
             # Convert to list
             result = []
             for _, row in leaderboard.iterrows():
-                result.append({
+                user_data = {
                     'username': row['username'],
                     'avg_score': float(row['avg_score']),
                     'best_score': float(row['best_score']),
                     'tweet_count': int(row['tweet_count']),
                     'rank': len(result) + 1
-                })
+                }
+                result.append(user_data)
+                print(f"👤 User: {user_data}")
             
-            return jsonify({
+            response_data = {
                 'success': True,
-                'data': result,  # Change 'leaderboard' to 'data' for consistency with frontend
+                'data': result,
                 'leaderboard': result,  # Keep both for backward compatibility
                 'count': len(result),
                 'stats': {
                     'total_contributors': len(df['username'].unique()),
                     'showing': len(result)
                 }
-            })
+            }
+            
+            print(f"✅ Returning {len(result)} users in leaderboard")
+            return jsonify(response_data)
         else:
             return jsonify({
                 'success': False,

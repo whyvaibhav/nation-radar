@@ -128,21 +128,26 @@ class ApiService {
     try {
       const response = await this.fetchApi<any>(`/api/leaderboard?limit=${limit}`);
       
+      console.log('🔍 Leaderboard API Response:', response);
+      
       // Transform leaderboard response to Tweet format expected by frontend
-      if (response.success && response.leaderboard) {
-        const transformedData: Tweet[] = response.leaderboard.map((user: any, index: number) => ({
+      if (response.success && (response.data || response.leaderboard)) {
+        const leaderboardData = response.data || response.leaderboard || [];
+        console.log('📊 Leaderboard Data:', leaderboardData);
+        
+        const transformedData: Tweet[] = leaderboardData.map((user: any, index: number) => ({
           id: `leaderboard_${user.username}_${index}`,
           text: `🏆 Rank #${user.rank || index + 1}: ${user.tweet_count} high-quality tweets with avg score ${user.avg_score.toFixed(2)}`,
           username: user.username,
           score: user.avg_score || user.best_score || 0,
           created_at: new Date().toISOString(),
           engagement: {
-            likes: Math.round(user.avg_score * 20), // Simulate engagement based on score
-            retweets: Math.round(user.avg_score * 8),
-            replies: Math.round(user.avg_score * 5),
-            views: Math.round(user.avg_score * 100),
-            bookmarks: Math.round(user.avg_score * 3),
-            quote_tweets: Math.round(user.avg_score * 2)
+            likes: Math.round((user.avg_score || 0) * 20), // Simulate engagement based on score
+            retweets: Math.round((user.avg_score || 0) * 8),
+            replies: Math.round((user.avg_score || 0) * 5),
+            views: Math.round((user.avg_score || 0) * 100),
+            bookmarks: Math.round((user.avg_score || 0) * 3),
+            quote_tweets: Math.round((user.avg_score || 0) * 2)
           }
         }));
 
@@ -154,9 +159,10 @@ class ApiService {
         };
       }
       
+      console.log('⚠️ No leaderboard data found, using demo data');
       return this.getDemoLeaderboardData();
     } catch (error) {
-      console.log('Leaderboard API failed, using demo data');
+      console.error('❌ Leaderboard API failed:', error);
       return this.getDemoLeaderboardData();
     }
   }

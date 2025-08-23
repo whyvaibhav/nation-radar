@@ -35,23 +35,44 @@ export default function LeaderboardPage() {
       try {
         setError(null)
         
-        // Fetch all users (increased limit to get more users)
-        const response = await apiService.getLeaderboard(100)
+        // Fetch all users directly from backend API
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://143.198.226.161';
+        console.log('🌐 Fetching from:', `${apiUrl}/api/leaderboard?limit=100`);
         
-        if (response.success && response.data) {
-          // Transform data to include additional metrics
-          const transformedUsers: LeaderboardUser[] = response.data.map((user: any, index: number) => ({
-            username: user.username,
-            avg_score: user.avg_score || 0,
-            best_score: user.best_score || 0,
-            tweet_count: user.tweet_count || 0,
-            rank: user.rank || index + 1,
-            total_engagement: Math.round((user.avg_score || 0) * (user.tweet_count || 0) * 10),
-            recent_activity: getRecentActivity()
-          }))
+        const response = await fetch(`${apiUrl}/api/leaderboard?limit=100`)
+        
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status}`);
+        }
+        
+        const data = await response.json()
+        
+        console.log('🔍 Leaderboard Page Response:', data);
+        
+        if (data.success && (data.data || data.leaderboard)) {
+          const leaderboardData = data.data || data.leaderboard || [];
+          console.log('📊 Processing leaderboard data:', leaderboardData);
           
+          // Transform data to include additional metrics
+          const transformedUsers: LeaderboardUser[] = leaderboardData.map((user: any, index: number) => {
+            console.log('👤 Processing user:', user);
+            
+            return {
+              username: user.username,
+              avg_score: user.avg_score || 0,
+              best_score: user.best_score || 0,
+              tweet_count: user.tweet_count || 0,
+              rank: user.rank || index + 1,
+              total_engagement: Math.round((user.avg_score || 0) * (user.tweet_count || 0) * 10),
+              recent_activity: getRecentActivity()
+            }
+          })
+          
+          console.log('✅ Transformed users:', transformedUsers);
           setUsers(transformedUsers)
           setFilteredUsers(transformedUsers)
+        } else {
+          console.log('⚠️ No data in response:', data);
         }
         
       } catch (err) {
