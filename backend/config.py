@@ -19,7 +19,7 @@ NATION_AGENT_API_KEY = os.getenv('NATION_AGENT_API_KEY', 'YOUR_NATION_AGENT_API_
 # Config values from YAML
 KEYWORDS = config.get('keywords', [])
 DAYS_LOOKBACK = int(config.get('days_lookback', 7))
-CSV_FILENAME = config.get('csv_filename', 'tweets.csv')
+# CSV_FILENAME removed - using SQLite database instead
 
 # Other settings
 DEBUG_MODE = os.getenv('DEBUG_MODE', 'False') == 'True'

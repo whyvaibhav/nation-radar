@@ -12,6 +12,10 @@ const nextConfig = {
   experimental: {
     esmExternals: 'loose'
   },
+  // Static export for Railway
+  output: 'export',
+  distDir: 'out',
+  trailingSlash: true,
   // Production settings
   assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
   basePath: ''

@@ -27,26 +27,45 @@ class NewTwitterFetcher:
         # Use the working endpoint format: /search/{keyword}
         url = f"{self.base_url}/search/{keyword}"
         
-        # Use the working parameters from HAR file
-        params = {
-            "count": "80",  # Increased from 20 to 80
-            "category": "Top"  # This was the key - using "Top" category
-        }
+        # Use multiple categories to get comprehensive coverage
+        all_tweets = []
         
-        try:
-            print(f"🔍 Fetching tweets for keyword: {keyword}")
-            response = requests.get(url, headers=headers, params=params, timeout=30)
+        # Try different categories to get more comprehensive data
+        categories = ["Top", "Latest", "Mixed"]
+        
+        for category in categories:
+            params = {
+                "count": "150",  # Increased to 150 per category
+                "category": category
+            }
             
-            if response.status_code == 200:
-                data = response.json()
-                tweets = self._extract_tweets_from_response(data)
-                print(f"✅ Found {len(tweets)} tweets for '{keyword}'")
-            else:
-                print(f"❌ API Error {response.status_code}: {response.text[:200]}")
+            try:
+                print(f"🔍 Fetching {category} tweets for keyword: {keyword}")
+                response = requests.get(url, headers=headers, params=params, timeout=30)
                 
-        except Exception as e:
-            print(f"❌ Error fetching tweets for '{keyword}': {e}")
+                if response.status_code == 200:
+                    data = response.json()
+                    category_tweets = self._extract_tweets_from_response(data)
+                    all_tweets.extend(category_tweets)
+                    print(f"✅ Found {len(category_tweets)} {category} tweets for '{keyword}'")
+                else:
+                    print(f"❌ API Error {response.status_code} for {category}: {response.text[:200]}")
+                    
+            except Exception as e:
+                print(f"❌ Error fetching {category} tweets for '{keyword}': {e}")
             
+            # Add delay between categories to avoid rate limiting
+            time.sleep(2)
+        
+        # Remove duplicates based on tweet ID
+        unique_tweets = {}
+        for tweet in all_tweets:
+            if tweet['id'] not in unique_tweets:
+                unique_tweets[tweet['id']] = tweet
+        
+        tweets = list(unique_tweets.values())
+        print(f"🎯 Total unique tweets for '{keyword}': {len(tweets)}")
+        
         return tweets
     
     def _extract_tweets_from_response(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:

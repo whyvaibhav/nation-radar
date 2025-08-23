@@ -9,10 +9,10 @@ import os
 import re
 import time
 from fetchers.new_twitter_fetcher import NewTwitterFetcher
-from storage.csv_storage import CSVStorage
+# CSV storage removed - using SQLite only
 from storage.sqlite_storage import SQLiteStorage
 import requests
-from config import KEYWORDS, DAYS_LOOKBACK, CSV_FILENAME
+from config import KEYWORDS, DAYS_LOOKBACK
 from nation_agent import format_tweet_for_agent, get_agent_score
 from dedup import earliest_unique_tweets, compute_text_hash, load_seen_hashes, save_seen_hashes
 from dotenv import load_dotenv
@@ -165,11 +165,11 @@ def fetch_tweet_engagement_new_api(tweet_id):
         return {"likes": 0, "retweets": 0, "replies": 0, "views": 0, "bookmarks": 0, "quote_tweets": 0}
 
 def main():
-    print(f"Loading config: keywords={KEYWORDS}, days_lookback={DAYS_LOOKBACK}, csv={CSV_FILENAME}")
+    print(f"Loading config: keywords={KEYWORDS}, days_lookback={DAYS_LOOKBACK}")
     print("🚀 Starting Nation Radar Pipeline - NEW API VERSION")
     print("📊 Using: twitter293.p.rapidapi.com (the API that worked for @web3spectre)")
 
-    print("⏰ Frequency: Weekly (every 7 days) | Monthly API usage: ~360 requests")
+    print("⏰ Frequency: Daily runs | Monthly API usage: ~27,000 requests")
     
     # Use the new Twitter fetcher
     fetcher = NewTwitterFetcher(days_lookback=DAYS_LOOKBACK)
@@ -180,8 +180,9 @@ def main():
     seen_hashes = load_seen_hashes()
     all_results = []
     
-    for keyword in KEYWORDS:
-        print(f"\n🔍 Fetching tweets for keyword: {keyword}")
+    total_keywords = len(KEYWORDS)
+    for i, keyword in enumerate(KEYWORDS, 1):
+        print(f"\n🔍 [{i}/{total_keywords}] Fetching tweets for keyword: {keyword}")
         tweets = fetcher.fetch(keyword)
         
         if not tweets:
@@ -190,6 +191,7 @@ def main():
         
         # Deduplicate by normalized text within this batch, keep earliest
         tweets = earliest_unique_tweets(tweets)
+        print(f"📊 After deduplication: {len(tweets)} unique tweets for '{keyword}'")
         count = 0
         
         for tweet in tweets:
@@ -198,7 +200,7 @@ def main():
                 if not contains_ticker(tweet['text'], "NATION"):
                     continue  # Skip tweets that don't have $NATION exactly
                     
-            if count >= 80:  # Process 80 tweets per keyword (increased from 5)
+            if count >= 300:  # Process 300 tweets per keyword (increased significantly)
                 break
                 
             tweet_id = tweet.get('id')
@@ -247,8 +249,8 @@ def main():
     print(f"📈 Collection Summary:")
     print(f"   • Keywords processed: {len(KEYWORDS)}")
     print(f"   • Tweets collected: {len(all_results)}")
-    print(f"   • API usage: ~{len(KEYWORDS) * 15} requests")
-    print(f"   • Next run: Weekly (every 7 days)")
+    print(f"   • API usage: ~{len(KEYWORDS) * 25} requests") # Updated calculation
+    print(f"   • Next run: Daily (every 24 hours)") # Updated frequency
     
     if all_results:
         print("\n🏆 Top 5 by score:")
