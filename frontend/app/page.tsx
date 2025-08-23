@@ -6,7 +6,7 @@ import { TrendingContent } from "@/components/trending-content"
 import { Leaderboard } from "@/components/leaderboard"
 import { ActivityFeed } from "@/components/activity-feed"
 import { ParticleBackground } from "@/components/particle-background"
-import { LoadingOverlay } from "@/components/loading-overlay"
+
 import { HeroSection } from "@/components/hero-section"
 
 import { DataRain } from "@/components/data-rain"
@@ -15,8 +15,8 @@ import { EnhancedMetrics } from "@/components/enhanced-metrics"
 import { apiService, Tweet, SystemStats } from "../lib/api"
 
 export default function Dashboard() {
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoaded, setIsLoaded] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [tweets, setTweets] = useState<Tweet[]>([])
   const [leaderboard, setLeaderboard] = useState<Tweet[]>([])
   const [stats, setStats] = useState<SystemStats>({
@@ -53,11 +53,9 @@ export default function Dashboard() {
     // Fetch data immediately
     fetchData()
 
-    // Set loading timer
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-      setIsLoaded(true)
-    }, 2000)
+    // No loading timer - instant load
+    setIsLoading(false)
+    setIsLoaded(true)
 
     // Set up auto-refresh every 30 seconds for real-time updates
     const refreshInterval = setInterval(() => {
@@ -66,14 +64,11 @@ export default function Dashboard() {
     }, 30000) // 30 seconds
 
     return () => {
-      clearTimeout(timer)
       clearInterval(refreshInterval)
     }
   }, [])
 
-  if (isLoading) {
-    return <LoadingOverlay />
-  }
+
 
   return (
     <div className="min-h-screen relative bg-black overflow-hidden">

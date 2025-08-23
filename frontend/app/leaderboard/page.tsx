@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ParticleBackground } from "@/components/particle-background"
-import { LoadingOverlay } from "@/components/loading-overlay"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -22,8 +22,8 @@ interface LeaderboardUser {
 }
 
 export default function LeaderboardPage() {
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoaded, setIsLoaded] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [users, setUsers] = useState<LeaderboardUser[]>([])
   const [filteredUsers, setFilteredUsers] = useState<LeaderboardUser[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -78,10 +78,10 @@ export default function LeaderboardPage() {
       } catch (err) {
         console.error('Failed to fetch leaderboard:', err)
         setError('Failed to load leaderboard data')
-      } finally {
-        setIsLoading(false)
-        setTimeout(() => setIsLoaded(true), 500)
-      }
+              } finally {
+          setIsLoading(false)
+          setIsLoaded(true)
+        }
     }
 
     fetchLeaderboard()
@@ -128,9 +128,7 @@ export default function LeaderboardPage() {
     return "text-red-400"
   }
 
-  if (isLoading) {
-    return <LoadingOverlay />
-  }
+
 
   return (
     <div className="min-h-screen relative bg-black overflow-hidden">
@@ -139,7 +137,7 @@ export default function LeaderboardPage() {
       <div className="relative z-10">
         <DashboardHeader />
 
-        <div className={`transition-all duration-1000 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+        <div className="opacity-100 translate-y-0">
           {/* Back Navigation */}
           <div className="px-6 pt-4 max-w-7xl mx-auto">
             <Link
