@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Trophy, Medal, Award, Search, TrendingUp, MessageSquare, Star, Users, ArrowLeft } from "lucide-react"
 import { apiService } from "../../lib/api"
 import Link from "next/link"
+import { UserProfileModal } from "@/components/user-profile-modal"
 
 interface LeaderboardUser {
   username: string
@@ -30,6 +31,8 @@ export default function LeaderboardPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState<"rank" | "score" | "tweets" | "engagement">("rank")
   const [error, setError] = useState<string | null>(null)
+  const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -127,6 +130,16 @@ export default function LeaderboardPage() {
     if (score >= 0.04) return "text-green-400"
     if (score >= 0.01) return "text-yellow-400"
     return "text-red-400"
+  }
+
+  const handleUserClick = (username: string) => {
+    setSelectedUser(username)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedUser(null)
   }
 
 
@@ -253,7 +266,10 @@ export default function LeaderboardPage() {
                       <div className="flex items-center space-x-4">
                         {getRankIcon(user.rank)}
                         <div>
-                          <div className="font-semibold text-foreground text-lg">
+                          <div 
+                            className="font-semibold text-foreground text-lg cursor-pointer hover:text-[#D0FF16] transition-colors duration-200"
+                            onClick={() => handleUserClick(user.username)}
+                          >
                             @{user.username}
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -298,6 +314,13 @@ export default function LeaderboardPage() {
           </section>
         </div>
       </div>
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        username={selectedUser}
+      />
     </div>
   )
 }

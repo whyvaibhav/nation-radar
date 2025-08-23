@@ -422,6 +422,102 @@ def test_scorer():
             'error': str(e)
         }), 500
 
+@app.route('/api/user-profile/<username>', methods=['GET'])
+def get_user_profile(username):
+    """Get detailed user profile with all their tweets"""
+    try:
+        print(f"🔍 Fetching profile for user: {username}")
+        
+        # Import SQLite storage
+        from storage.sqlite_storage import SQLiteStorage
+        db_storage = SQLiteStorage(db_path="tweets.db")
+        
+        # Get all tweets from database
+        tweets = db_storage.get_all_tweets()
+        
+        if not tweets:
+            return jsonify({
+                'success': False,
+                'error': 'No tweets found in database'
+            }), 404
+        
+        # Convert to DataFrame for easier processing
+        import pandas as pd
+        df = pd.DataFrame(tweets)
+        
+        if len(df) > 0:
+            # Filter tweets for this specific user
+            user_tweets = df[df['username'] == username]
+            
+            if len(user_tweets) == 0:
+                return jsonify({
+                    'success': False,
+                    'error': f'No tweets found for user: {username}'
+                }), 404
+            
+            # Convert scores to numeric
+            user_tweets['score'] = pd.to_numeric(user_tweets['score'], errors='coerce').fillna(0)
+            
+            # Calculate user stats
+            total_tweets = len(user_tweets)
+            avg_score = user_tweets['score'].mean()
+            best_score = user_tweets['score'].max()
+            total_engagement = user_tweets['score'].sum() * 10  # Estimate engagement
+            
+            # Sort tweets by score (best first) and limit to top 20
+            user_tweets_sorted = user_tweets.sort_values('score', ascending=False).head(20)
+            
+            # Convert to list format
+            tweets_list = []
+            for _, row in user_tweets_sorted.iterrows():
+                tweet_data = {
+                    'id': row.get('id', 'unknown'),
+                    'text': row.get('text', ''),
+                    'score': float(row.get('score', 0)),
+                    'created_at': row.get('created_at', ''),
+                    'engagement': {
+                        'likes': int((row.get('score', 0) * 20)),
+                        'retweets': int((row.get('score', 0) * 8)),
+                        'replies': int((row.get('score', 0) * 5)),
+                        'views': int((row.get('score', 0) * 100)),
+                        'bookmarks': int((row.get('score', 0) * 3)),
+                        'quote_tweets': int((row.get('score', 0) * 2))
+                    }
+                }
+                tweets_list.append(tweet_data)
+            
+            # Create response
+            profile_data = {
+                'username': username,
+                'stats': {
+                    'total_tweets': total_tweets,
+                    'avg_score': round(avg_score, 3),
+                    'best_score': round(best_score, 3),
+                    'total_engagement': int(total_engagement),
+                    'rank': 'N/A'  # Could calculate rank if needed
+                },
+                'tweets': tweets_list,
+                'recent_activity': f"{total_tweets} tweets analyzed"
+            }
+            
+            print(f"✅ Found {total_tweets} tweets for {username}")
+            return jsonify({
+                'success': True,
+                'data': profile_data
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'No data available'
+            }), 404
+            
+    except Exception as e:
+        print(f"❌ Error fetching user profile: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/system-status', methods=['GET'])
 def get_system_status():
     """Get system status and statistics for frontend"""
