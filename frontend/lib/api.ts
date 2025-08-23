@@ -141,14 +141,14 @@ class ApiService {
           username: user.username,
           score: user.avg_score || user.best_score || 0,
           created_at: new Date().toISOString(),
-          engagement: {
-            likes: Math.round((user.avg_score || 0) * 20), // Simulate engagement based on score
-            retweets: Math.round((user.avg_score || 0) * 8),
-            replies: Math.round((user.avg_score || 0) * 5),
-            views: Math.round((user.avg_score || 0) * 100),
-            bookmarks: Math.round((user.avg_score || 0) * 3),
-            quote_tweets: Math.round((user.avg_score || 0) * 2)
-          }
+                           engagement: {
+                   likes: user.total_engagement || 0, // Use real engagement data
+                   retweets: Math.round((user.total_engagement || 0) * 0.1), // Estimate from total
+                   replies: Math.round((user.total_engagement || 0) * 0.05), // Estimate from total
+                   views: Math.round((user.total_engagement || 0) * 2), // Estimate from total
+                   bookmarks: Math.round((user.total_engagement || 0) * 0.02), // Estimate from total
+                   quote_tweets: Math.round((user.total_engagement || 0) * 0.01) // Estimate from total
+                 }
         }));
 
         return {

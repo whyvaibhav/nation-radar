@@ -103,22 +103,14 @@ def get_crestal_data():
             # Convert to list of dictionaries
             data = []
             for _, row in df_sorted.iterrows():
-                # Use actual engagement data if available, otherwise simulate
-                engagement = row.get('engagement', {})
-                if not engagement or not isinstance(engagement, dict):
-                    # Simulate engagement data based on score
-                    score = float(row['score'])
-                    base_engagement = max(1, int(score * 50))
-                    
-                    import random
-                    engagement = {
-                        'likes': base_engagement + int(score * 20) + random.randint(0, 5),
-                        'retweets': int(base_engagement * 0.3) + random.randint(0, 2),
-                        'replies': int(base_engagement * 0.2) + random.randint(0, 3),
-                        'views': base_engagement * 15 + random.randint(0, 50),
-                        'bookmarks': int(base_engagement * 0.1) + random.randint(0, 1),
-                        'quote_tweets': int(base_engagement * 0.05) + random.randint(0, 1)
-                    }
+                # Parse real engagement data from JSON
+                engagement_json = row.get('engagement', '{}')
+                try:
+                    engagement = json.loads(engagement_json) if isinstance(engagement_json, str) else engagement_json
+                    if not engagement or not isinstance(engagement, dict):
+                        engagement = {}
+                except:
+                    engagement = {}
                 
                 # Add some time variation to make data feel more live
                 import random
@@ -462,7 +454,20 @@ def get_user_profile(username):
             total_tweets = len(user_tweets)
             avg_score = user_tweets['score'].mean()
             best_score = user_tweets['score'].max()
-            total_engagement = user_tweets['score'].sum() * 10  # Estimate engagement
+            
+            # Calculate real total engagement from actual engagement data
+            total_engagement = 0
+            for _, row in user_tweets.iterrows():
+                engagement_json = row.get('engagement', '{}')
+                try:
+                    real_engagement = json.loads(engagement_json) if isinstance(engagement_json, str) else engagement_json
+                    total_engagement += (
+                        real_engagement.get('likes', 0) + 
+                        real_engagement.get('retweets', 0) * 2 + 
+                        real_engagement.get('replies', 0) * 3
+                    )
+                except:
+                    continue
             
             # Sort tweets by score (best first) and limit to top 20
             user_tweets_sorted = user_tweets.sort_values('score', ascending=False).head(20)
@@ -470,18 +475,25 @@ def get_user_profile(username):
             # Convert to list format
             tweets_list = []
             for _, row in user_tweets_sorted.iterrows():
+                # Parse real engagement data from JSON
+                engagement_json = row.get('engagement', '{}')
+                try:
+                    real_engagement = json.loads(engagement_json) if isinstance(engagement_json, str) else engagement_json
+                except:
+                    real_engagement = {}
+                
                 tweet_data = {
                     'id': row.get('id', 'unknown'),
                     'text': row.get('text', ''),
                     'score': float(row.get('score', 0)),
                     'created_at': row.get('created_at', ''),
                     'engagement': {
-                        'likes': int((row.get('score', 0) * 20)),
-                        'retweets': int((row.get('score', 0) * 8)),
-                        'replies': int((row.get('score', 0) * 5)),
-                        'views': int((row.get('score', 0) * 100)),
-                        'bookmarks': int((row.get('score', 0) * 3)),
-                        'quote_tweets': int((row.get('score', 0) * 2))
+                        'likes': int(real_engagement.get('likes', 0)),
+                        'retweets': int(real_engagement.get('retweets', 0)),
+                        'replies': int(real_engagement.get('replies', 0)),
+                        'views': int(real_engagement.get('views', 0)),
+                        'bookmarks': int(real_engagement.get('bookmarks', 0)),
+                        'quote_tweets': int(real_engagement.get('quote_tweets', 0))
                     }
                 }
                 tweets_list.append(tweet_data)
