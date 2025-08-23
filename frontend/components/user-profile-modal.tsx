@@ -54,22 +54,29 @@ export function UserProfileModal({ isOpen, onClose, username }: UserProfileModal
       setError(null)
       
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://143.198.226.161'
+      console.log(`🔍 Fetching profile for @${username} from ${apiUrl}/api/user-profile/${username}`)
+      
       const response = await fetch(`${apiUrl}/api/user-profile/${username}`)
       
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`)
+        if (response.status === 404) {
+          throw new Error(`User @${username} not found in database`)
+        } else {
+          throw new Error(`API Error: ${response.status} - ${response.statusText}`)
+        }
       }
       
       const data = await response.json()
+      console.log('📊 Profile response:', data)
       
       if (data.success && data.data) {
         setProfile(data.data)
       } else {
-        throw new Error(data.error || 'Failed to load profile')
+        throw new Error(data.error || 'Failed to load profile data')
       }
     } catch (err) {
       console.error('Failed to fetch user profile:', err)
-      setError('Failed to load user profile')
+      setError(err instanceof Error ? err.message : 'Failed to load user profile')
     } finally {
       setIsLoading(false)
     }
@@ -114,14 +121,46 @@ export function UserProfileModal({ isOpen, onClose, username }: UserProfileModal
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           {isLoading && (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D0FF16] mx-auto"></div>
-              <p className="mt-2" style={{ color: "rgba(208,255,22,0.7)" }}>Loading profile...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D0FF16] mx-auto mb-4"></div>
+              <p className="text-lg font-semibold mb-2" style={{ color: "#D0FF16" }}>
+                Loading @{username}...
+              </p>
+              <p className="text-sm" style={{ color: "rgba(208,255,22,0.7)" }}>
+                Fetching profile data and tweets
+              </p>
             </div>
           )}
 
           {error && (
             <div className="text-center py-8">
-              <p className="text-red-400">{error}</p>
+              <div className="mb-4">
+                <p className="text-red-400 mb-2">{error}</p>
+                <p className="text-muted-foreground text-sm">
+                  This user may not have any tweets in our database yet.
+                </p>
+              </div>
+              
+              {/* Show available users as suggestions */}
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-3" style={{ color: "#D0FF16" }}>
+                  Available Users in Database
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {['Linked_Nation', '0xv1ktorrr', 'SpursArmyTweets', 'JesusSavesUs777', 'jxt_ario'].map((availableUser) => (
+                    <button
+                      key={availableUser}
+                      onClick={() => {
+                        setError(null)
+                        fetchUserProfile(availableUser)
+                      }}
+                      className="p-2 text-sm border border-[rgba(208,255,22,0.2)] rounded hover:bg-[rgba(208,255,22,0.1)] transition-colors"
+                      style={{ color: "#D0FF16" }}
+                    >
+                      @{availableUser}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 

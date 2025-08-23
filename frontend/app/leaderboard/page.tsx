@@ -261,18 +261,18 @@ export default function LeaderboardPage() {
                   {filteredUsers.map((user, index) => (
                     <div
                       key={user.username}
-                      className="flex items-center justify-between p-4 bg-secondary rounded-lg border border-border hover:shadow-md hover:border-primary/30 transition-all duration-300"
+                      className="flex items-center justify-between p-4 bg-secondary rounded-lg border border-border hover:shadow-md hover:border-[rgba(208,255,22,0.3)] hover:bg-[rgba(208,255,22,0.05)] transition-all duration-300 cursor-pointer group"
+                      onClick={() => handleUserClick(user.username)}
                     >
                       <div className="flex items-center space-x-4">
                         {getRankIcon(user.rank)}
                         <div>
                           <div 
-                            className="font-semibold text-foreground text-lg cursor-pointer hover:text-[#D0FF16] transition-colors duration-200"
-                            onClick={() => handleUserClick(user.username)}
+                            className="font-semibold text-foreground text-lg group-hover:text-[#D0FF16] transition-colors duration-200"
                           >
                             @{user.username}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-muted-foreground group-hover:text-[rgba(208,255,22,0.7)] transition-colors duration-200">
                             {user.tweet_count} tweets • Last active {user.recent_activity}
                           </div>
                         </div>
