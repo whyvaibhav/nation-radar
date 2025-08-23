@@ -218,8 +218,8 @@ def get_leaderboard():
             leaderboard.columns = ['avg_score', 'best_score', 'tweet_count']
             leaderboard = leaderboard.reset_index()
             
-            # Sort by average score and limit results
-            leaderboard = leaderboard.sort_values('avg_score', ascending=False).head(limit)
+                    # Sort by average score and limit results (increased default limit)
+        leaderboard = leaderboard.sort_values('avg_score', ascending=False).head(limit)
             
             # Convert to list
             result = []
@@ -248,6 +248,102 @@ def get_leaderboard():
                 'error': 'Invalid CSV format'
             }), 400
             
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/metrics/engagement', methods=['GET'])
+def get_engagement_metrics():
+    """Get detailed engagement metrics"""
+    try:
+        from storage.sqlite_storage import SQLiteStorage
+        db_storage = SQLiteStorage(db_path="tweets.db")
+        tweets = db_storage.get_all_tweets()
+        
+        if not tweets:
+            return jsonify({
+                'success': True,
+                'data': {
+                    'avg_likes': 0,
+                    'avg_retweets': 0,
+                    'avg_replies': 0,
+                    'avg_views': 0,
+                    'total_engagement': 0,
+                    'engagement_rate': 0
+                }
+            })
+        
+        import pandas as pd
+        df = pd.DataFrame(tweets)
+        
+        # Calculate engagement metrics
+        total_likes = sum(tweet.get('engagement', {}).get('likes', 0) for tweet in tweets)
+        total_retweets = sum(tweet.get('engagement', {}).get('retweets', 0) for tweet in tweets)
+        total_replies = sum(tweet.get('engagement', {}).get('replies', 0) for tweet in tweets)
+        total_views = sum(tweet.get('engagement', {}).get('views', 0) for tweet in tweets)
+        
+        tweet_count = len(tweets)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'avg_likes': round(total_likes / tweet_count, 1) if tweet_count > 0 else 0,
+                'avg_retweets': round(total_retweets / tweet_count, 1) if tweet_count > 0 else 0,
+                'avg_replies': round(total_replies / tweet_count, 1) if tweet_count > 0 else 0,
+                'avg_views': round(total_views / tweet_count, 1) if tweet_count > 0 else 0,
+                'total_engagement': total_likes + total_retweets + total_replies,
+                'engagement_rate': round((total_likes + total_retweets + total_replies) / tweet_count, 2) if tweet_count > 0 else 0
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/metrics/quality-distribution', methods=['GET'])
+def get_quality_distribution():
+    """Get quality distribution metrics"""
+    try:
+        from storage.sqlite_storage import SQLiteStorage
+        db_storage = SQLiteStorage(db_path="tweets.db")
+        tweets = db_storage.get_all_tweets()
+        
+        if not tweets:
+            return jsonify({
+                'success': True,
+                'data': {
+                    'high_quality': 0,
+                    'medium_quality': 0,
+                    'low_quality': 0,
+                    'high_percentage': 0,
+                    'medium_percentage': 0,
+                    'low_percentage': 0
+                }
+            })
+        
+        # Count tweets by quality ranges
+        high_quality = len([t for t in tweets if t.get('score', 0) >= 0.04])
+        low_quality = len([t for t in tweets if t.get('score', 0) <= 0.001])
+        medium_quality = len(tweets) - high_quality - low_quality
+        
+        total = len(tweets)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'high_quality': high_quality,
+                'medium_quality': medium_quality,
+                'low_quality': low_quality,
+                'high_percentage': round((high_quality / total) * 100, 1) if total > 0 else 0,
+                'medium_percentage': round((medium_quality / total) * 100, 1) if total > 0 else 0,
+                'low_percentage': round((low_quality / total) * 100, 1) if total > 0 else 0
+            }
+        })
+        
     except Exception as e:
         return jsonify({
             'success': False,

@@ -10,6 +10,7 @@ import { LoadingOverlay } from "@/components/loading-overlay"
 import { HeroSection } from "@/components/hero-section"
 
 import { DataRain } from "@/components/data-rain"
+import { EnhancedMetrics } from "@/components/enhanced-metrics"
 
 import { apiService, Tweet, SystemStats } from "../lib/api"
 
@@ -102,6 +103,13 @@ export default function Dashboard() {
         )}
 
         <main className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
+          {/* Enhanced Metrics Section */}
+          <div
+            className={`transition-all duration-1000 delay-200 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+          >
+            <EnhancedMetrics />
+          </div>
+          
           <div
             className={`grid grid-cols-1 xl:grid-cols-3 gap-8 transition-all duration-1000 delay-400 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
           >
