@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ParticleBackground } from "@/components/particle-background"
+import { DataRain } from "@/components/data-rain"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -133,6 +134,7 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen relative bg-black overflow-hidden">
       <ParticleBackground />
+      <DataRain />
 
       <div className="relative z-10">
         <DashboardHeader />
