@@ -1,60 +1,55 @@
 #!/usr/bin/env python3
 """
-New Twitter API Fetcher using the working endpoint format
+Enhanced Twitter API Fetcher using the working endpoint format
+Now with pagination and comprehensive tweet collection
 """
 
 import requests
 import time
 import os
 from typing import List, Dict, Any
+from datetime import datetime, timedelta
 
 class NewTwitterFetcher:
-    def __init__(self, days_lookback: int = 7):
+    def __init__(self, days_lookback: int = 21):
         self.days_lookback = days_lookback
         self.api_key = os.getenv('RAPIDAPI_KEY', 'bd408a75efmsh7d13585f3a40368p186d85jsndd821cdf1fef')
         self.base_url = "https://twitter293.p.rapidapi.com"
         
     def fetch(self, keyword: str) -> List[Dict[str, Any]]:
         """
-        Fetch tweets using the working endpoint format discovered from HAR file
+        Fetch tweets using enhanced collection with pagination and multiple strategies
         """
-        tweets = []
+        all_tweets = []
         headers = {
             "X-RapidAPI-Key": self.api_key,
             "X-RapidAPI-Host": "twitter293.p.rapidapi.com"
         }
         
-        # Use the working endpoint format: /search/{keyword}
-        url = f"{self.base_url}/search/{keyword}"
-        
-        # Use multiple categories to get comprehensive coverage
-        all_tweets = []
-        
-        # Try different categories to get more comprehensive data
+        # Strategy 1: Multiple categories with pagination
         categories = ["Top", "Latest", "Mixed"]
         
         for category in categories:
-            params = {
-                "count": "150",  # Increased to 150 per category
-                "category": category
-            }
+            print(f"🔍 Fetching {category} tweets for keyword: {keyword}")
+            category_tweets = self._fetch_category_with_pagination(keyword, category, headers)
+            all_tweets.extend(category_tweets)
+            print(f"✅ Found {len(category_tweets)} {category} tweets for '{keyword}'")
             
-            try:
-                print(f"🔍 Fetching {category} tweets for keyword: {keyword}")
-                response = requests.get(url, headers=headers, params=params, timeout=30)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    category_tweets = self._extract_tweets_from_response(data)
-                    all_tweets.extend(category_tweets)
-                    print(f"✅ Found {len(category_tweets)} {category} tweets for '{keyword}'")
-                else:
-                    print(f"❌ API Error {response.status_code} for {category}: {response.text[:200]}")
-                    
-            except Exception as e:
-                print(f"❌ Error fetching {category} tweets for '{keyword}': {e}")
-            
-            # Add delay between categories to avoid rate limiting
+            # Rate limiting between categories
+            time.sleep(2)
+        
+        # Strategy 2: Try different search variations for broader coverage
+        search_variations = [
+            keyword,
+            f'"{keyword}"',  # Exact phrase
+            f'#{keyword.replace(" ", "")}',  # Hashtag version
+        ]
+        
+        for variation in search_variations[1:]:  # Skip the original keyword
+            print(f"🔍 Fetching tweets for variation: {variation}")
+            variation_tweets = self._fetch_category_with_pagination(variation, "Latest", headers)
+            all_tweets.extend(variation_tweets)
+            print(f"✅ Found {len(variation_tweets)} tweets for variation '{variation}'")
             time.sleep(2)
         
         # Remove duplicates based on tweet ID
@@ -64,9 +59,120 @@ class NewTwitterFetcher:
                 unique_tweets[tweet['id']] = tweet
         
         tweets = list(unique_tweets.values())
+        
+        # Filter tweets by date (within lookback period)
+        filtered_tweets = self._filter_tweets_by_date(tweets)
+        
         print(f"🎯 Total unique tweets for '{keyword}': {len(tweets)}")
+        print(f"📅 Tweets within {self.days_lookback} days: {len(filtered_tweets)}")
+        
+        return filtered_tweets
+    
+    def _fetch_category_with_pagination(self, keyword: str, category: str, headers: Dict) -> List[Dict[str, Any]]:
+        """
+        Fetch tweets for a specific category with pagination
+        """
+        tweets = []
+        max_requests = 5  # Make up to 5 requests per category
+        cursor = None
+        
+        for request_num in range(max_requests):
+            try:
+                url = f"{self.base_url}/search/{keyword}"
+                params = {
+                    "count": "100",  # Request 100 tweets per request
+                    "category": category
+                }
+                
+                # Add cursor for pagination if available
+                if cursor:
+                    params["cursor"] = cursor
+                
+                print(f"  📄 Request {request_num + 1}/{max_requests} for {category}")
+                response = requests.get(url, headers=headers, params=params, timeout=30)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    batch_tweets = self._extract_tweets_from_response(data)
+                    
+                    if not batch_tweets:
+                        print(f"  ⚠️  No more tweets found for {category}")
+                        break
+                    
+                    tweets.extend(batch_tweets)
+                    print(f"  ✅ Got {len(batch_tweets)} tweets (total: {len(tweets)})")
+                    
+                    # Check for cursor for next page
+                    cursor = self._extract_cursor(data)
+                    if not cursor:
+                        print(f"  📄 No more pages for {category}")
+                        break
+                        
+                elif response.status_code == 429:
+                    print(f"  ⏳ Rate limited, waiting 30 seconds...")
+                    time.sleep(30)
+                    continue
+                else:
+                    print(f"  ❌ API Error {response.status_code} for {category}")
+                    break
+                    
+            except Exception as e:
+                print(f"  ❌ Error in request {request_num + 1}: {e}")
+                break
+            
+            # Rate limiting between requests
+            time.sleep(2)
         
         return tweets
+    
+    def _extract_cursor(self, data: Dict[str, Any]) -> str:
+        """
+        Extract cursor for pagination from API response
+        """
+        try:
+            if 'entries' in data:
+                for entry in data['entries']:
+                    if entry.get('type') == 'TimelineAddCursor':
+                        content = entry.get('content', {})
+                        if content.get('cursorType') == 'Bottom':
+                            return content.get('value', '')
+        except Exception as e:
+            print(f"❌ Error extracting cursor: {e}")
+        return None
+    
+    def _filter_tweets_by_date(self, tweets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Filter tweets to only include those within the lookback period
+        """
+        cutoff_date = datetime.now() - timedelta(days=self.days_lookback)
+        filtered_tweets = []
+        
+        for tweet in tweets:
+            try:
+                # Parse tweet date
+                tweet_date_str = tweet.get('created_at', '')
+                if tweet_date_str:
+                    # Handle different date formats
+                    if 'T' in tweet_date_str:
+                        # ISO format
+                        tweet_date = datetime.fromisoformat(tweet_date_str.replace('Z', '+00:00'))
+                    else:
+                        # Twitter format: "Wed Aug 25 10:30:00 +0000 2024"
+                        tweet_date = datetime.strptime(tweet_date_str, '%a %b %d %H:%M:%S %z %Y')
+                    
+                    # Convert to naive datetime for comparison
+                    if tweet_date.tzinfo:
+                        tweet_date = tweet_date.replace(tzinfo=None)
+                    
+                    if tweet_date >= cutoff_date:
+                        filtered_tweets.append(tweet)
+                        
+            except Exception as e:
+                print(f"❌ Error parsing tweet date: {e}")
+                # Include tweet if we can't parse the date
+                filtered_tweets.append(tweet)
+        
+        return filtered_tweets
     
     def _extract_tweets_from_response(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
