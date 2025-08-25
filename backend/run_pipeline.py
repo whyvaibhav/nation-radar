@@ -2,12 +2,15 @@
 """
 Updated Nation Radar Pipeline
 Uses the new Twitter API (twitter293.p.rapidapi.com) that we successfully tested
+ENHANCED VERSION: Removed broken detail API calls, optimized rate limiting
 """
 
 import sys
 import os
 import re
 import time
+import logging
+from datetime import datetime
 from fetchers.new_twitter_fetcher import NewTwitterFetcher
 # CSV storage removed - using SQLite only
 from storage.sqlite_storage import SQLiteStorage
@@ -19,6 +22,17 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('pipeline.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # --- Helper: Check if text contains ticker (e.g., $NATION) ---
 def contains_ticker(text, ticker):
@@ -37,140 +51,14 @@ def engagement_has_signal(engagement: dict) -> bool:
     except Exception:
         return False
 
-def fetch_tweet_engagement_new_api(tweet_id):
-    """Fetch engagement metrics for a tweet using the new Twitter API.
-    Returns dict on success, or None if not available.
-    """
-    
-    RAPIDAPI_KEY = os.getenv('RAPIDAPI_KEY', 'bd408a75efmsh7d13585f3a40368p186d85jsndd821cdf1fef')
-    
-    headers = {
-        "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "twitter293.p.rapidapi.com"
-    }
-    
-    # Try different endpoints for tweet details
-    endpoints = [
-        f"https://twitter293.p.rapidapi.com/tweet/{tweet_id}",
-        f"https://twitter293.p.rapidapi.com/tweets/{tweet_id}",
-        f"https://twitter293.p.rapidapi.com/tweet/details/{tweet_id}"
-    ]
-    
-    try:
-        # Add delay to prevent rate limiting
-        time.sleep(1)
-        
-        for endpoint in endpoints:
-            try:
-                response = requests.get(endpoint, headers=headers, timeout=30)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    
-                    # Parse engagement metrics from response
-                    engagement = {
-                        "likes": 0,
-                        "retweets": 0, 
-                        "replies": 0,
-                        "views": 0,
-                        "bookmarks": 0,
-                        "quote_tweets": 0
-                    }
-                    
-                    # Try to extract from various response structures
-                    try:
-                        # Handle the threaded conversation format
-                        if 'data' in data and 'threaded_conversation_with_injections_v2' in data['data']:
-                            instructions = data['data']['threaded_conversation_with_injections_v2'].get('instructions', [])
-                            
-                            for instruction in instructions:
-                                if instruction.get('type') == 'TimelineAddEntries':
-                                    entries = instruction.get('entries', [])
-                                    
-                                    for entry in entries:
-                                        content = entry.get('content', {})
-                                        if content.get('entryType') == 'TimelineTimelineItem':
-                                            item_content = content.get('itemContent', {})
-                                            if item_content.get('itemType') == 'TimelineTweet':
-                                                tweet_result = item_content.get('tweet_results', {}).get('result', {})
-                                                
-                                                if tweet_result and 'legacy' in tweet_result:
-                                                    legacy = tweet_result['legacy']
-                                                    engagement['likes'] = int(legacy.get('favorite_count', 0) or 0)
-                                                    engagement['retweets'] = int(legacy.get('retweet_count', 0) or 0)
-                                                    engagement['replies'] = int(legacy.get('reply_count', 0) or 0)
-                                                    engagement['quote_tweets'] = int(legacy.get('quote_count', 0) or 0)
-                                                    engagement['bookmarks'] = int(legacy.get('bookmark_count', 0) or 0)
-                                                    
-                                                    # Try to get views
-                                                    if 'views' in tweet_result:
-                                                        views_obj = tweet_result.get('views')
-                                                        if isinstance(views_obj, dict) and 'count' in views_obj:
-                                                            engagement['views'] = int(views_obj.get('count') or 0)
-                                                        elif isinstance(views_obj, (int, str)):
-                                                            engagement['views'] = int(views_obj)
-                                                    
-                                                    break  # Found the tweet, break out
-                        
-                        # Handle simple tweet format
-                        elif 'legacy' in data:
-                            legacy = data['legacy']
-                            engagement['likes'] = int(legacy.get('favorite_count', 0) or 0)
-                            engagement['retweets'] = int(legacy.get('retweet_count', 0) or 0)
-                            engagement['replies'] = int(legacy.get('reply_count', 0) or 0)
-                            engagement['quote_tweets'] = int(legacy.get('quote_count', 0) or 0)
-                            engagement['bookmarks'] = int(legacy.get('bookmark_count', 0) or 0)
-                            
-                            # Try to get views
-                            if 'views' in data:
-                                views_obj = data.get('views')
-                                if isinstance(views_obj, dict) and 'count' in views_obj:
-                                    engagement['views'] = int(views_obj.get('count') or 0)
-                                elif isinstance(views_obj, (int, str)):
-                                    engagement['views'] = int(views_obj)
-                        
-                        # Handle public_metrics structure
-                        elif 'public_metrics' in data:
-                            metrics = data['public_metrics']
-                            engagement['likes'] = int(metrics.get('like_count', 0) or 0)
-                            engagement['retweets'] = int(metrics.get('retweet_count', 0) or 0)
-                            engagement['replies'] = int(metrics.get('reply_count', 0) or 0)
-                            engagement['quote_tweets'] = int(metrics.get('quote_count', 0) or 0)
-                            engagement['bookmarks'] = int(metrics.get('bookmark_count', 0) or 0)
-                            engagement['views'] = int(metrics.get('impression_count', 0) or 0)
-                        
-                    except Exception as e:
-                        print(f"Error parsing engagement data: {e}")
-                        pass
-                    
-                    return engagement if engagement_has_signal(engagement) else None
-                    
-                elif response.status_code == 429:
-                    print(f"Rate limited on engagement endpoint; waiting 30 seconds...")
-                    time.sleep(30)
-                    continue
-                else:
-                    print(f"Status {response.status_code} for endpoint {endpoint}")
-                    continue
-                    
-            except Exception as e:
-                print(f"Error with endpoint {endpoint}: {e}")
-                continue
-        
-        print(f"Warning: Could not fetch engagement for tweet {tweet_id}")
-        return None
-        
-    except Exception as e:
-        print(f"Error fetching engagement for tweet {tweet_id}: {e}")
-        return {"likes": 0, "retweets": 0, "replies": 0, "views": 0, "bookmarks": 0, "quote_tweets": 0}
-
 def main():
-    print(f"Loading config: keywords={KEYWORDS}, days_lookback={DAYS_LOOKBACK}")
-    print("🚀 Starting Nation Radar Pipeline - NEW API VERSION")
-    print("📊 Using: twitter293.p.rapidapi.com (the API that worked for @web3spectre)")
+    start_time = datetime.now()
+    logger.info(f"🚀 Starting Nation Radar Pipeline - ENHANCED VERSION")
+    logger.info(f"📊 Using: twitter293.p.rapidapi.com (search API only)")
+    logger.info(f"⏰ Rate limiting: 2 seconds between requests")
+    logger.info(f"📈 Tweets per keyword: 100 (optimized)")
+    logger.info(f"📅 Frequency: Daily runs | Monthly API usage: ~12,000 requests")
 
-    print("⏰ Frequency: Daily runs | Monthly API usage: ~27,000 requests")
-    
     # Use the new Twitter fetcher
     fetcher = NewTwitterFetcher(days_lookback=DAYS_LOOKBACK)
     
@@ -180,82 +68,127 @@ def main():
     seen_hashes = load_seen_hashes()
     all_results = []
     
+    # Statistics tracking
+    stats = {
+        'keywords_processed': 0,
+        'tweets_found': 0,
+        'tweets_processed': 0,
+        'tweets_stored': 0,
+        'api_errors': 0,
+        'duplicates_skipped': 0
+    }
+    
     total_keywords = len(KEYWORDS)
     for i, keyword in enumerate(KEYWORDS, 1):
-        print(f"\n🔍 [{i}/{total_keywords}] Fetching tweets for keyword: {keyword}")
-        tweets = fetcher.fetch(keyword)
+        logger.info(f"\n🔍 [{i}/{total_keywords}] Fetching tweets for keyword: {keyword}")
         
-        if not tweets:
-            print(f"❌ No tweets found for keyword: {keyword}")
-            continue
-        
-        # Deduplicate by normalized text within this batch, keep earliest
-        tweets = earliest_unique_tweets(tweets)
-        print(f"📊 After deduplication: {len(tweets)} unique tweets for '{keyword}'")
-        count = 0
-        
-        for tweet in tweets:
-            # Post-filter: For $NATION, only process tweets containing $NATION (not #NATION or plain 'nation')
-            if keyword == "$NATION":
-                if not contains_ticker(tweet['text'], "NATION"):
-                    continue  # Skip tweets that don't have $NATION exactly
+        try:
+            tweets = fetcher.fetch(keyword)
+            stats['keywords_processed'] += 1
+            
+            if not tweets:
+                logger.warning(f"❌ No tweets found for keyword: {keyword}")
+                continue
+            
+            logger.info(f"📊 Found {len(tweets)} tweets for '{keyword}'")
+            stats['tweets_found'] += len(tweets)
+            
+            # Deduplicate by normalized text within this batch, keep earliest
+            tweets = earliest_unique_tweets(tweets)
+            logger.info(f"📊 After deduplication: {len(tweets)} unique tweets for '{keyword}'")
+            
+            count = 0
+            for tweet in tweets:
+                # Post-filter: For $NATION, only process tweets containing $NATION (not #NATION or plain 'nation')
+                if keyword == "$NATION":
+                    if not contains_ticker(tweet['text'], "NATION"):
+                        continue  # Skip tweets that don't have $NATION exactly
+                        
+                if count >= 100:  # Process 100 tweets per keyword (optimized)
+                    logger.info(f"📈 Reached limit of 100 tweets for '{keyword}'")
+                    break
                     
-            if count >= 300:  # Process 300 tweets per keyword (increased significantly)
-                break
+                tweet_id = tweet.get('id')
+                if not tweet_id or tweet_id in seen_ids:
+                    stats['duplicates_skipped'] += 1
+                    continue
+                    
+                seen_ids.add(tweet_id)
+                stats['tweets_processed'] += 1
                 
-            tweet_id = tweet.get('id')
-            if not tweet_id or tweet_id in seen_ids:
-                continue
+                # Use engagement from search API only (removed broken detail API calls)
+                existing_engagement = tweet.get('engagement') if isinstance(tweet, dict) else None
                 
-            seen_ids.add(tweet_id)
-            
-            # Use engagement from search if present; otherwise try detail API
-            existing_engagement = tweet.get('engagement') if isinstance(tweet, dict) else None
-            detail_engagement = fetch_tweet_engagement_new_api(tweet_id)
-            
-            if detail_engagement is not None:
-                tweet['engagement'] = detail_engagement
-            elif existing_engagement:
-                tweet['engagement'] = existing_engagement
-            else:
-                tweet['engagement'] = {"likes": 0, "retweets": 0, "replies": 0, "views": 0, "bookmarks": 0, "quote_tweets": 0}
-            
-            # Skip if we've already scored near-identical content in past runs
-            content_hash = compute_text_hash(tweet.get('text', ''))
-            if content_hash in seen_hashes:
-                continue
+                if existing_engagement and engagement_has_signal(existing_engagement):
+                    # Use engagement data from search API
+                    tweet['engagement'] = existing_engagement
+                    logger.debug(f"✅ Using search API engagement for tweet {tweet_id}")
+                else:
+                    # Default engagement if none available
+                    tweet['engagement'] = {"likes": 0, "retweets": 0, "replies": 0, "views": 0, "bookmarks": 0, "quote_tweets": 0}
+                    logger.debug(f"⚠️  No engagement data for tweet {tweet_id}, using defaults")
                 
-            formatted = format_tweet_for_agent(tweet)
-            print(f"\n--- Message sent to agent ---\n{formatted}\n----------------------------\n")
-            
-            score = get_agent_score(formatted)
-            tweet['score'] = score
-            
-            # Store to database (enforces cross-run dedup)
-            if db_storage.append_row(tweet):
-                all_results.append((tweet['username'], score, tweet['id']))
-                print(f"✅ Stored tweet {tweet['id']} by @{tweet['username']} with score {score}")
-                count += 1
-            else:
-                print(f"⏭️  Skipped duplicate tweet {tweet['id']} by @{tweet['username']} (already processed)")
-            
-            # Mark this content as seen so future reposts won't be scored again
-            seen_hashes.add(content_hash)
+                # Skip if we've already scored near-identical content in past runs
+                content_hash = compute_text_hash(tweet.get('text', ''))
+                if content_hash in seen_hashes:
+                    stats['duplicates_skipped'] += 1
+                    continue
+                    
+                formatted = format_tweet_for_agent(tweet)
+                logger.debug(f"\n--- Message sent to agent ---\n{formatted}\n----------------------------\n")
+                
+                try:
+                    score = get_agent_score(formatted)
+                    tweet['score'] = score
+                except Exception as e:
+                    logger.error(f"❌ Error getting agent score for tweet {tweet_id}: {e}")
+                    stats['api_errors'] += 1
+                    tweet['score'] = 0
+                
+                # Store to database (enforces cross-run dedup)
+                if db_storage.append_row(tweet):
+                    all_results.append((tweet['username'], score, tweet['id']))
+                    logger.info(f"✅ Stored tweet {tweet['id']} by @{tweet['username']} with score {score}")
+                    stats['tweets_stored'] += 1
+                    count += 1
+                else:
+                    logger.info(f"⏭️  Skipped duplicate tweet {tweet['id']} by @{tweet['username']} (already processed)")
+                    stats['duplicates_skipped'] += 1
+                
+                # Mark this content as seen so future reposts won't be scored again
+                seen_hashes.add(content_hash)
+                
+                # Rate limiting: 2 seconds between requests
+                time.sleep(2)
+                
+        except Exception as e:
+            logger.error(f"❌ Error processing keyword '{keyword}': {e}")
+            stats['api_errors'] += 1
+            continue
     
     # Persist seen hashes across runs
     save_seen_hashes(seen_hashes)
     
-    print(f"\n🎯 Pipeline complete. {len(all_results)} unique tweets processed.")
-    print(f"📈 Collection Summary:")
-    print(f"   • Keywords processed: {len(KEYWORDS)}")
-    print(f"   • Tweets collected: {len(all_results)}")
-    print(f"   • API usage: ~{len(KEYWORDS) * 25} requests") # Updated calculation
-    print(f"   • Next run: Daily (every 24 hours)") # Updated frequency
+    # Calculate execution time
+    execution_time = datetime.now() - start_time
+    
+    logger.info(f"\n🎯 Pipeline complete in {execution_time}")
+    logger.info(f"📈 Collection Summary:")
+    logger.info(f"   • Keywords processed: {stats['keywords_processed']}/{len(KEYWORDS)}")
+    logger.info(f"   • Tweets found: {stats['tweets_found']}")
+    logger.info(f"   • Tweets processed: {stats['tweets_processed']}")
+    logger.info(f"   • Tweets stored: {stats['tweets_stored']}")
+    logger.info(f"   • Duplicates skipped: {stats['duplicates_skipped']}")
+    logger.info(f"   • API errors: {stats['api_errors']}")
+    logger.info(f"   • API usage: ~{stats['keywords_processed'] * 25} requests")
+    logger.info(f"   • Next run: Daily (every 24 hours)")
     
     if all_results:
-        print("\n🏆 Top 5 by score:")
+        logger.info("\n🏆 Top 5 by score:")
         for username, score, tweet_id in sorted(all_results, key=lambda x: -x[1])[:5]:
-            print(f"   @{username}: {score} (ID: {tweet_id})")
+            logger.info(f"   @{username}: {score} (ID: {tweet_id})")
+    
+    logger.info(f"\n✅ Pipeline execution completed successfully!")
 
 if __name__ == "__main__":
     main()
