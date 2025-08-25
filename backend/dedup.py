@@ -22,16 +22,16 @@ _RETWEET_PREFIX = re.compile(r"^rt\s+@\w+:\s*", re.IGNORECASE)
 
 # Map common smart punctuation to ASCII equivalents
 _SMART_PUNCT_MAP = str.maketrans({
-    "'": "'",
-    "'": "'",
-    "´": "'",
-    "`": "'",
-    """: '"',
-    """: '"',
-    "–": "-",
-    "—": "-",
-    "…": "...",
-    "\xa0": " ",  # non-breaking space
+    '\u2019': "'",  # Right single quotation mark
+    '\u2018': "'",  # Left single quotation mark
+    '\u00B4': "'",  # Acute accent
+    '\u0060': "'",  # Grave accent
+    '\u201D': '"',  # Right double quotation mark
+    '\u201C': '"',  # Left double quotation mark
+    '\u2013': "-",  # En dash
+    '\u2014': "-",  # Em dash
+    '\u2026': "...",  # Horizontal ellipsis
+    '\u00A0': " ",  # Non-breaking space
 })
 
 
