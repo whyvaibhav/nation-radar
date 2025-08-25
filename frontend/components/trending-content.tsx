@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Heart, MessageCircle, Repeat2, Share, TrendingUp } from "lucide-react"
+import { Heart, MessageCircle, Repeat2, Share, TrendingUp, Eye } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Tweet } from "../lib/api"
 
@@ -49,6 +49,7 @@ export function TrendingContent({ tweets }: TrendingContentProps) {
     likes: tweet.engagement.likes,
     retweets: tweet.engagement.retweets,
     replies: tweet.engagement.replies,
+    views: tweet.engagement.views,
     timestamp: formatTime(tweet.created_at),
     sentiment: getSentimentFromScore(tweet.score),
   })) : [
@@ -60,6 +61,7 @@ export function TrendingContent({ tweets }: TrendingContentProps) {
       likes: 0,
       retweets: 0,
       replies: 0,
+      views: 0,
       timestamp: "Loading...",
       sentiment: "neutral",
     }
@@ -136,6 +138,10 @@ export function TrendingContent({ tweets }: TrendingContentProps) {
                 <div className="flex items-center space-x-1">
                   <MessageCircle className="w-4 h-4" />
                   <span className="text-sm">{tweet.replies}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Eye className="w-4 h-4" />
+                  <span className="text-sm">{tweet.views}</span>
                 </div>
               </div>
               

@@ -285,7 +285,17 @@ def get_engagement_metrics():
         total_likes = sum(tweet.get('engagement', {}).get('likes', 0) for tweet in tweets)
         total_retweets = sum(tweet.get('engagement', {}).get('retweets', 0) for tweet in tweets)
         total_replies = sum(tweet.get('engagement', {}).get('replies', 0) for tweet in tweets)
-        total_views = sum(tweet.get('engagement', {}).get('views', 0) for tweet in tweets)
+        
+        # For views, filter out extreme outliers (> 10,000 views) to get realistic average
+        views_data = [tweet.get('engagement', {}).get('views', 0) for tweet in tweets]
+        filtered_views = [v for v in views_data if v <= 10000]  # Remove extreme outliers
+        
+        if filtered_views:
+            avg_views = sum(filtered_views) / len(filtered_views)
+            total_views = sum(filtered_views)
+        else:
+            avg_views = 0
+            total_views = 0
         
         tweet_count = len(tweets)
         
@@ -295,7 +305,7 @@ def get_engagement_metrics():
                 'avg_likes': round(total_likes / tweet_count, 1) if tweet_count > 0 else 0,
                 'avg_retweets': round(total_retweets / tweet_count, 1) if tweet_count > 0 else 0,
                 'avg_replies': round(total_replies / tweet_count, 1) if tweet_count > 0 else 0,
-                'avg_views': round(total_views / tweet_count, 1) if tweet_count > 0 else 0,
+                'avg_views': round(avg_views, 1),
                 'total_engagement': total_likes + total_retweets + total_replies,
                 'engagement_rate': round((total_likes + total_retweets + total_replies) / tweet_count, 2) if tweet_count > 0 else 0
             }
