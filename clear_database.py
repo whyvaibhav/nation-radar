@@ -57,6 +57,11 @@ def clear_database():
         # Clear all tweets
         print(f"\n🗑️ Clearing database...")
         cursor.execute("DELETE FROM tweets")
+        
+        # Clear content hashes table (this was causing duplicate detection!)
+        cursor.execute("DELETE FROM content_hashes")
+        print(f"🗑️ Clearing content hashes table...")
+        
         conn.commit()
         
         # Clear seen hashes file

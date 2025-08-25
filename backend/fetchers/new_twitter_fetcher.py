@@ -36,22 +36,16 @@ class NewTwitterFetcher:
         categories = ["Top", "Latest"]  # Removed "Mixed" to reduce noise
         
         for category in categories:
-            print(f"🔍 Fetching {category} tweets for keyword: {keyword}")
             category_tweets = self._fetch_category_with_pagination(keyword, category, headers)
             all_tweets.extend(category_tweets)
-            print(f"✅ Found {len(category_tweets)} {category} tweets for '{keyword}'")
-            
-            # Rate limiting between categories
             time.sleep(2)
         
         # Strategy 2: Limited, focused variations only
         search_variations = self._generate_focused_variations(keyword)
         
         for variation in search_variations:
-            print(f"🔍 Fetching tweets for variation: {variation}")
             variation_tweets = self._fetch_category_with_pagination(variation, "Latest", headers)
             all_tweets.extend(variation_tweets)
-            print(f"✅ Found {len(variation_tweets)} tweets for variation '{variation}'")
             time.sleep(2)
         
         # Remove duplicates based on tweet ID
@@ -67,10 +61,6 @@ class NewTwitterFetcher:
         
         # Additional quality filtering
         quality_tweets = self._filter_quality_content(filtered_tweets, keyword)
-        
-        print(f"🎯 Total unique tweets for '{keyword}': {len(tweets)}")
-        print(f"📅 Tweets within {self.days_lookback} days: {len(filtered_tweets)}")
-        print(f"✨ Quality tweets: {len(quality_tweets)}")
         
         return quality_tweets
     
@@ -158,7 +148,6 @@ class NewTwitterFetcher:
                 if cursor:
                     params["cursor"] = cursor
                 
-                print(f"  📄 Request {request_num + 1}/{max_requests} for {category}")
                 response = requests.get(url, headers=headers, params=params, timeout=30)
                 
                 if response.status_code == 200:
@@ -166,31 +155,24 @@ class NewTwitterFetcher:
                     batch_tweets = self._extract_tweets_from_response(data)
                     
                     if not batch_tweets:
-                        print(f"  ⚠️  No more tweets found for {category}")
                         break
                     
                     tweets.extend(batch_tweets)
-                    print(f"  ✅ Got {len(batch_tweets)} tweets (total: {len(tweets)})")
                     
                     # Check for cursor for next page
                     cursor = self._extract_cursor(data)
                     if not cursor:
-                        print(f"  📄 No more pages for {category}")
                         break
                         
                 elif response.status_code == 429:
-                    print(f"  ⏳ Rate limited, waiting 30 seconds...")
                     time.sleep(30)
                     continue
                 elif response.status_code == 404:
-                    print(f"  ❌ Search not found for '{keyword}' in {category}")
                     break
                 else:
-                    print(f"  ❌ API Error {response.status_code} for {category}")
                     break
                     
             except Exception as e:
-                print(f"  ❌ Error in request {request_num + 1}: {e}")
                 break
             
             # Rate limiting between requests

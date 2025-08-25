@@ -53,11 +53,7 @@ def engagement_has_signal(engagement: dict) -> bool:
 
 def main():
     start_time = datetime.now()
-    logger.info(f"🚀 Starting Nation Radar Pipeline - ENHANCED VERSION")
-    logger.info(f"📊 Using: twitter293.p.rapidapi.com (search API only)")
-    logger.info(f"⏰ Rate limiting: 2 seconds between requests")
-    logger.info(f"📈 Tweets per keyword: 100 (optimized)")
-    logger.info(f"📅 Frequency: Daily runs | Monthly API usage: ~12,000 requests")
+    print("Starting Nation Radar Pipeline...")
 
     # Use the new Twitter fetcher
     fetcher = NewTwitterFetcher(days_lookback=DAYS_LOOKBACK)
@@ -80,22 +76,20 @@ def main():
     
     total_keywords = len(KEYWORDS)
     for i, keyword in enumerate(KEYWORDS, 1):
-        logger.info(f"\n🔍 [{i}/{total_keywords}] Fetching tweets for keyword: {keyword}")
+        print(f"Processing keyword {i}/{total_keywords}: {keyword}")
         
         try:
             tweets = fetcher.fetch(keyword)
             stats['keywords_processed'] += 1
             
             if not tweets:
-                logger.warning(f"❌ No tweets found for keyword: {keyword}")
+                print(f"No tweets found for: {keyword}")
                 continue
             
-            logger.info(f"📊 Found {len(tweets)} tweets for '{keyword}'")
             stats['tweets_found'] += len(tweets)
             
             # Deduplicate by normalized text within this batch, keep earliest
             tweets = earliest_unique_tweets(tweets)
-            logger.info(f"📊 After deduplication: {len(tweets)} unique tweets for '{keyword}'")
             
             count = 0
             for tweet in tweets:
@@ -105,7 +99,7 @@ def main():
                         continue  # Skip tweets that don't have $NATION exactly
                         
                 if count >= 100:  # Process 100 tweets per keyword (optimized)
-                    logger.info(f"📈 Reached limit of 100 tweets for '{keyword}'")
+                    print(f"Reached limit of 100 tweets for: {keyword}")
                     break
                     
                 tweet_id = tweet.get('id')
@@ -122,11 +116,11 @@ def main():
                 if existing_engagement and engagement_has_signal(existing_engagement):
                     # Use engagement data from search API
                     tweet['engagement'] = existing_engagement
-                    logger.debug(f"✅ Using search API engagement for tweet {tweet_id}")
+                    logger.debug(f"Using search API engagement for tweet {tweet_id}")
                 else:
                     # Default engagement if none available
                     tweet['engagement'] = {"likes": 0, "retweets": 0, "replies": 0, "views": 0, "bookmarks": 0, "quote_tweets": 0}
-                    logger.debug(f"⚠️  No engagement data for tweet {tweet_id}, using defaults")
+                    logger.debug(f"No engagement data for tweet {tweet_id}, using defaults")
                 
                 # Skip if we've already scored near-identical content in past runs
                 content_hash = compute_text_hash(tweet.get('text', ''))
@@ -141,18 +135,18 @@ def main():
                     score = get_agent_score(formatted)
                     tweet['score'] = score
                 except Exception as e:
-                    logger.error(f"❌ Error getting agent score for tweet {tweet_id}: {e}")
+                    logger.error(f"Error getting agent score for tweet {tweet_id}: {e}")
                     stats['api_errors'] += 1
                     tweet['score'] = 0
                 
                 # Store to database (enforces cross-run dedup)
                 if db_storage.append_row(tweet):
                     all_results.append((tweet['username'], score, tweet['id']))
-                    logger.info(f"✅ Stored tweet {tweet['id']} by @{tweet['username']} with score {score}")
+                    logger.info(f"Stored tweet {tweet['id']} by @{tweet['username']} with score {score}")
                     stats['tweets_stored'] += 1
                     count += 1
                 else:
-                    logger.info(f"⏭️  Skipped duplicate tweet {tweet['id']} by @{tweet['username']} (already processed)")
+                    logger.info(f"Skipped duplicate tweet {tweet['id']} by @{tweet['username']} (already processed)")
                     stats['duplicates_skipped'] += 1
                 
                 # Mark this content as seen so future reposts won't be scored again
@@ -162,7 +156,7 @@ def main():
                 # Removed 2-second delay here - it was causing excessive slowdown
                 
         except Exception as e:
-            logger.error(f"❌ Error processing keyword '{keyword}': {e}")
+            logger.error(f"Error processing keyword '{keyword}': {e}")
             stats['api_errors'] += 1
             continue
         
@@ -176,23 +170,18 @@ def main():
     # Calculate execution time
     execution_time = datetime.now() - start_time
     
-    logger.info(f"\n🎯 Pipeline complete in {execution_time}")
-    logger.info(f"📈 Collection Summary:")
-    logger.info(f"   • Keywords processed: {stats['keywords_processed']}/{len(KEYWORDS)}")
-    logger.info(f"   • Tweets found: {stats['tweets_found']}")
-    logger.info(f"   • Tweets processed: {stats['tweets_processed']}")
-    logger.info(f"   • Tweets stored: {stats['tweets_stored']}")
-    logger.info(f"   • Duplicates skipped: {stats['duplicates_skipped']}")
-    logger.info(f"   • API errors: {stats['api_errors']}")
-    logger.info(f"   • API usage: ~{stats['keywords_processed'] * 25} requests")
-    logger.info(f"   • Next run: Daily (every 24 hours)")
+    print(f"\nPipeline completed in {execution_time}")
+    print(f"Keywords processed: {stats['keywords_processed']}/{len(KEYWORDS)}")
+    print(f"Tweets found: {stats['tweets_found']}")
+    print(f"Tweets stored: {stats['tweets_stored']}")
+    print(f"Duplicates skipped: {stats['duplicates_skipped']}")
     
     if all_results:
-        logger.info("\n🏆 Top 5 by score:")
+        print("\nTop 5 by score:")
         for username, score, tweet_id in sorted(all_results, key=lambda x: -x[1])[:5]:
-            logger.info(f"   @{username}: {score} (ID: {tweet_id})")
+            print(f"  @{username}: {score}")
     
-    logger.info(f"\n✅ Pipeline execution completed successfully!")
+    print("Pipeline execution completed successfully!")
 
 if __name__ == "__main__":
     main()
