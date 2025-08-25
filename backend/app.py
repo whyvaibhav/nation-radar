@@ -297,7 +297,8 @@ def get_engagement_metrics():
         
         # Add timestamp column for time-based calculations
         df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
-        df['created_at'] = df['created_at'].fillna(pd.Timestamp.now())
+        # Convert timezone-aware timestamps to naive datetime for comparison
+        df['created_at'] = df['created_at'].dt.tz_localize(None).fillna(pd.Timestamp.now())
         
         # Calculate engagement metrics
         total_likes = sum(tweet.get('engagement', {}).get('likes', 0) for tweet in tweets)
