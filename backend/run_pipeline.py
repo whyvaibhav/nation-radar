@@ -158,13 +158,17 @@ def main():
                 # Mark this content as seen so future reposts won't be scored again
                 seen_hashes.add(content_hash)
                 
-                # Rate limiting: 2 seconds between requests
-                time.sleep(2)
+                # Rate limiting: Only between keywords, not between tweets
+                # Removed 2-second delay here - it was causing excessive slowdown
                 
         except Exception as e:
             logger.error(f"❌ Error processing keyword '{keyword}': {e}")
             stats['api_errors'] += 1
             continue
+        
+        # Add delay between keywords only
+        if i < total_keywords:  # Don't delay after the last keyword
+            time.sleep(2)
     
     # Persist seen hashes across runs
     save_seen_hashes(seen_hashes)

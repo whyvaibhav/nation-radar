@@ -7,6 +7,7 @@ Focused on relevant, high-quality content with minimal spam
 import requests
 import time
 import os
+import re
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 
@@ -15,6 +16,11 @@ class NewTwitterFetcher:
         self.days_lookback = days_lookback
         self.api_key = os.getenv('RAPIDAPI_KEY', 'bd408a75efmsh7d13585f3a40368p186d85jsndd821cdf1fef')
         self.base_url = "https://twitter293.p.rapidapi.com"
+    
+    def contains_ticker_symbol(self, text: str, ticker: str) -> bool:
+        """Check if text contains the exact ticker symbol (e.g., $NATION)"""
+        pattern = re.compile(rf'\${ticker}\b', re.IGNORECASE)
+        return bool(pattern.search(text))
         
     def fetch(self, keyword: str) -> List[Dict[str, Any]]:
         """
@@ -86,7 +92,7 @@ class NewTwitterFetcher:
     
     def _filter_quality_content(self, tweets: List[Dict[str, Any]], keyword: str) -> List[Dict[str, Any]]:
         """
-        Filter out low-quality, generic content
+        Filter out low-quality, generic content - LESS AGGRESSIVE
         """
         quality_tweets = []
         
@@ -94,14 +100,13 @@ class NewTwitterFetcher:
             text = tweet.get('text', '').lower()
             
             # Skip if tweet is too short (likely spam)
-            if len(text) < 20:
+            if len(text) < 15:  # Reduced from 20 to 15
                 continue
             
-            # Skip if tweet contains common spam indicators
+            # Skip if tweet contains obvious spam indicators (reduced list)
             spam_indicators = [
-                'follow me', 'retweet', 'like', 'dm me', 'send me',
-                'airdrop', 'free', 'claim', 'moon', 'pump', '100x',
-                '🚀', '💎', '🔥', '📈', '💰'
+                'follow me', 'dm me', 'send me',
+                'free airdrop', 'claim free', 'get free'
             ]
             
             if any(indicator in text for indicator in spam_indicators):
@@ -109,18 +114,25 @@ class NewTwitterFetcher:
             
             # Skip if tweet is mostly hashtags
             hashtag_count = text.count('#')
-            if hashtag_count > 5:
+            if hashtag_count > 8:  # Increased from 5 to 8
                 continue
             
             # Skip if tweet is mostly mentions
             mention_count = text.count('@')
-            if mention_count > 3:
+            if mention_count > 5:  # Increased from 3 to 5
                 continue
             
-            # Ensure keyword relevance
+            # Better keyword relevance check
             keyword_lower = keyword.lower().replace('$', '').replace('"', '')
-            if keyword_lower not in text and keyword_lower.replace(' ', '') not in text:
-                continue
+            
+            # For $NATION, only match the exact ticker format $NATION
+            if keyword == "$NATION":
+                if not self.contains_ticker_symbol(text, "NATION"):
+                    continue
+            else:
+                # For other keywords, check if the keyword appears
+                if keyword_lower not in text and keyword_lower.replace(' ', '') not in text:
+                    continue
             
             quality_tweets.append(tweet)
         
