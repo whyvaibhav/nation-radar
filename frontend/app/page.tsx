@@ -57,11 +57,11 @@ export default function Dashboard() {
     setIsLoading(false)
     setIsLoaded(true)
 
-    // Set up auto-refresh every 30 seconds for real-time updates
+    // Set up auto-refresh every 10 seconds for real-time updates
     const refreshInterval = setInterval(() => {
       console.log('🔄 Auto-refreshing data...')
       fetchData()
-    }, 30000) // 30 seconds
+    }, 10000) // 10 seconds
 
     return () => {
       clearInterval(refreshInterval)
