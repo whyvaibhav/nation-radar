@@ -403,7 +403,8 @@ def get_quality_distribution():
         # Convert to DataFrame for easier processing
         df = pd.DataFrame(tweets)
         df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
-        df['created_at'] = df['created_at'].fillna(pd.Timestamp.now())
+        # Convert timezone-aware timestamps to naive datetime for comparison
+        df['created_at'] = df['created_at'].dt.tz_localize(None).fillna(pd.Timestamp.now())
         df['score'] = pd.to_numeric(df['score'], errors='coerce').fillna(0)
         
         # Calculate quality distribution
@@ -736,7 +737,8 @@ def get_dashboard_stats():
         # Convert to DataFrame
         df = pd.DataFrame(tweets)
         df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
-        df['created_at'] = df['created_at'].fillna(pd.Timestamp.now())
+        # Convert timezone-aware timestamps to naive datetime for comparison
+        df['created_at'] = df['created_at'].dt.tz_localize(None).fillna(pd.Timestamp.now())
         df['score'] = pd.to_numeric(df['score'], errors='coerce').fillna(0)
         
         # Overview stats
