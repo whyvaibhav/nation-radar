@@ -18,7 +18,7 @@ class NewTwitterFetcher:
         
     def fetch(self, keyword: str) -> List[Dict[str, Any]]:
         """
-        Fetch tweets using enhanced collection with pagination and multiple strategies
+        Fetch tweets using enhanced collection with multiple strategies
         """
         all_tweets = []
         headers = {
@@ -39,17 +39,23 @@ class NewTwitterFetcher:
             time.sleep(2)
         
         # Strategy 2: Try different search variations for broader coverage
-        search_variations = [
-            keyword,
-            f'"{keyword}"',  # Exact phrase
-            f'#{keyword.replace(" ", "")}',  # Hashtag version
-        ]
+        search_variations = self._generate_search_variations(keyword)
         
-        for variation in search_variations[1:]:  # Skip the original keyword
+        for variation in search_variations:
             print(f"🔍 Fetching tweets for variation: {variation}")
             variation_tweets = self._fetch_category_with_pagination(variation, "Latest", headers)
             all_tweets.extend(variation_tweets)
             print(f"✅ Found {len(variation_tweets)} tweets for variation '{variation}'")
+            time.sleep(2)
+        
+        # Strategy 3: Try different time-based searches
+        time_variations = self._generate_time_variations(keyword)
+        
+        for time_var in time_variations:
+            print(f"🔍 Fetching tweets for time variation: {time_var}")
+            time_tweets = self._fetch_category_with_pagination(time_var, "Latest", headers)
+            all_tweets.extend(time_tweets)
+            print(f"✅ Found {len(time_tweets)} tweets for time variation '{time_var}'")
             time.sleep(2)
         
         # Remove duplicates based on tweet ID
@@ -68,12 +74,52 @@ class NewTwitterFetcher:
         
         return filtered_tweets
     
+    def _generate_search_variations(self, keyword: str) -> List[str]:
+        """
+        Generate different search variations to get more tweets
+        """
+        variations = []
+        
+        # Basic variations
+        if ' ' in keyword:
+            # For multi-word keywords like "Crestal Network"
+            variations.extend([
+                f'"{keyword}"',  # Exact phrase
+                keyword.replace(' ', ' AND '),  # AND search
+                keyword.replace(' ', ' OR '),   # OR search
+            ])
+        else:
+            # For single words like "Crestal"
+            variations.extend([
+                f'"{keyword}"',  # Exact phrase
+                f'{keyword}*',   # Wildcard search
+            ])
+        
+        # Remove duplicates and empty strings
+        return list(set([v for v in variations if v]))
+    
+    def _generate_time_variations(self, keyword: str) -> List[str]:
+        """
+        Generate time-based search variations
+        """
+        variations = []
+        
+        # Add time-based searches to get more recent tweets
+        time_filters = [
+            f'{keyword} since:2025-08-01',  # Since August 1st
+            f'{keyword} since:2025-07-25',  # Since July 25th
+            f'{keyword} since:2025-07-15',  # Since July 15th
+        ]
+        
+        variations.extend(time_filters)
+        return variations
+    
     def _fetch_category_with_pagination(self, keyword: str, category: str, headers: Dict) -> List[Dict[str, Any]]:
         """
         Fetch tweets for a specific category with pagination
         """
         tweets = []
-        max_requests = 5  # Make up to 5 requests per category
+        max_requests = 8  # Increased to 8 requests per category
         cursor = None
         
         for request_num in range(max_requests):
@@ -112,6 +158,9 @@ class NewTwitterFetcher:
                     print(f"  ⏳ Rate limited, waiting 30 seconds...")
                     time.sleep(30)
                     continue
+                elif response.status_code == 404:
+                    print(f"  ❌ Search not found for '{keyword}' in {category}")
+                    break
                 else:
                     print(f"  ❌ API Error {response.status_code} for {category}")
                     break
@@ -152,13 +201,18 @@ class NewTwitterFetcher:
                 # Parse tweet date
                 tweet_date_str = tweet.get('created_at', '')
                 if tweet_date_str:
-                    # Handle different date formats
-                    if 'T' in tweet_date_str:
-                        # ISO format
-                        tweet_date = datetime.fromisoformat(tweet_date_str.replace('Z', '+00:00'))
-                    else:
-                        # Twitter format: "Wed Aug 25 10:30:00 +0000 2024"
+                    # Handle Twitter format: "Thu Aug 21 20:08:17 +0000 2025"
+                    try:
                         tweet_date = datetime.strptime(tweet_date_str, '%a %b %d %H:%M:%S %z %Y')
+                    except ValueError:
+                        # Try ISO format if Twitter format fails
+                        try:
+                            tweet_date = datetime.fromisoformat(tweet_date_str.replace('Z', '+00:00'))
+                        except ValueError:
+                            print(f"❌ Cannot parse date: {tweet_date_str}")
+                            # Include tweet if we can't parse the date
+                            filtered_tweets.append(tweet)
+                            continue
                     
                     # Convert to naive datetime for comparison
                     if tweet_date.tzinfo:
