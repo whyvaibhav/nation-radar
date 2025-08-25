@@ -259,9 +259,12 @@ def get_leaderboard():
 
 @app.route('/api/metrics/engagement', methods=['GET'])
 def get_engagement_metrics():
-    """Get detailed engagement metrics"""
+    """Get detailed engagement metrics with real-time calculations"""
     try:
         from storage.sqlite_storage import SQLiteStorage
+        from datetime import datetime, timedelta
+        import pandas as pd
+        
         db_storage = SQLiteStorage(db_path="tweets.db")
         tweets = db_storage.get_all_tweets()
         
@@ -274,12 +277,27 @@ def get_engagement_metrics():
                     'avg_replies': 0,
                     'avg_views': 0,
                     'total_engagement': 0,
-                    'engagement_rate': 0
+                    'engagement_rate': 0,
+                    'recent_activity': {
+                        'last_24h_tweets': 0,
+                        'last_7d_tweets': 0,
+                        'trending_users': []
+                    },
+                    'real_time_stats': {
+                        'total_tweets': 0,
+                        'unique_users': 0,
+                        'avg_score': 0,
+                        'last_updated': datetime.now().isoformat()
+                    }
                 }
             })
         
-        import pandas as pd
+        # Convert to DataFrame for easier processing
         df = pd.DataFrame(tweets)
+        
+        # Add timestamp column for time-based calculations
+        df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
+        df['created_at'] = df['created_at'].fillna(pd.Timestamp.now())
         
         # Calculate engagement metrics
         total_likes = sum(tweet.get('engagement', {}).get('likes', 0) for tweet in tweets)
@@ -299,6 +317,28 @@ def get_engagement_metrics():
         
         tweet_count = len(tweets)
         
+        # Calculate recent activity (last 24 hours and 7 days)
+        now = datetime.now()
+        last_24h = now - timedelta(hours=24)
+        last_7d = now - timedelta(days=7)
+        
+        recent_24h = df[df['created_at'] >= last_24h]
+        recent_7d = df[df['created_at'] >= last_7d]
+        
+        # Find trending users (most active in last 7 days)
+        trending_users = recent_7d.groupby('username').size().sort_values(ascending=False).head(5)
+        trending_users_list = [{'username': user, 'tweet_count': int(count)} for user, count in trending_users.items()]
+        
+        # Calculate quality metrics
+        df['score'] = pd.to_numeric(df['score'], errors='coerce').fillna(0)
+        avg_score = df['score'].mean()
+        unique_users = df['username'].nunique()
+        
+        # Calculate engagement trends
+        recent_engagement = recent_24h['engagement'].apply(lambda x: 
+            x.get('likes', 0) + x.get('retweets', 0) + x.get('replies', 0) if isinstance(x, dict) else 0
+        ).sum()
+        
         return jsonify({
             'success': True,
             'data': {
@@ -307,7 +347,20 @@ def get_engagement_metrics():
                 'avg_replies': round(total_replies / tweet_count, 1) if tweet_count > 0 else 0,
                 'avg_views': round(avg_views, 1),
                 'total_engagement': total_likes + total_retweets + total_replies,
-                'engagement_rate': round((total_likes + total_retweets + total_replies) / tweet_count, 2) if tweet_count > 0 else 0
+                'engagement_rate': round((total_likes + total_retweets + total_replies) / tweet_count, 2) if tweet_count > 0 else 0,
+                'recent_activity': {
+                    'last_24h_tweets': len(recent_24h),
+                    'last_7d_tweets': len(recent_7d),
+                    'last_24h_engagement': int(recent_engagement),
+                    'trending_users': trending_users_list
+                },
+                'real_time_stats': {
+                    'total_tweets': tweet_count,
+                    'unique_users': int(unique_users),
+                    'avg_score': round(avg_score, 3),
+                    'last_updated': datetime.now().isoformat(),
+                    'database_size_mb': round(len(str(tweets)) / (1024 * 1024), 2)
+                }
             }
         })
         
@@ -319,9 +372,12 @@ def get_engagement_metrics():
 
 @app.route('/api/metrics/quality-distribution', methods=['GET'])
 def get_quality_distribution():
-    """Get quality distribution metrics"""
+    """Get quality distribution metrics with real-time analysis"""
     try:
         from storage.sqlite_storage import SQLiteStorage
+        from datetime import datetime, timedelta
+        import pandas as pd
+        
         db_storage = SQLiteStorage(db_path="tweets.db")
         tweets = db_storage.get_all_tweets()
         
@@ -334,16 +390,49 @@ def get_quality_distribution():
                     'low_quality': 0,
                     'high_percentage': 0,
                     'medium_percentage': 0,
-                    'low_percentage': 0
+                    'low_percentage': 0,
+                    'quality_trends': {
+                        'improving': False,
+                        'top_performers': [],
+                        'quality_score': 0
+                    }
                 }
             })
         
-        # Count tweets by quality ranges
-        high_quality = len([t for t in tweets if t.get('score', 0) >= 0.04])
-        low_quality = len([t for t in tweets if t.get('score', 0) <= 0.001])
-        medium_quality = len(tweets) - high_quality - low_quality
+        # Convert to DataFrame for easier processing
+        df = pd.DataFrame(tweets)
+        df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
+        df['created_at'] = df['created_at'].fillna(pd.Timestamp.now())
+        df['score'] = pd.to_numeric(df['score'], errors='coerce').fillna(0)
         
-        total = len(tweets)
+        # Calculate quality distribution
+        high_quality = len(df[df['score'] >= 0.04])
+        low_quality = len(df[df['score'] <= 0.001])
+        medium_quality = len(df) - high_quality - low_quality
+        
+        total = len(df)
+        
+        # Calculate recent quality trends (last 7 days vs previous 7 days)
+        now = datetime.now()
+        last_7d = now - timedelta(days=7)
+        previous_7d = now - timedelta(days=14)
+        
+        recent_7d = df[df['created_at'] >= last_7d]
+        previous_7d_data = df[(df['created_at'] >= previous_7d) & (df['created_at'] < last_7d)]
+        
+        # Calculate quality trends
+        recent_avg_score = recent_7d['score'].mean() if len(recent_7d) > 0 else 0
+        previous_avg_score = previous_7d_data['score'].mean() if len(previous_7d_data) > 0 else 0
+        
+        quality_improving = recent_avg_score > previous_avg_score
+        
+        # Find top performers (users with highest average scores)
+        user_quality = df.groupby('username')['score'].agg(['mean', 'count']).reset_index()
+        user_quality = user_quality[user_quality['count'] >= 2]  # At least 2 tweets
+        top_performers = user_quality.nlargest(5, 'mean')[['username', 'mean', 'count']].to_dict('records')
+        
+        # Calculate overall quality score (0-100)
+        quality_score = min(100, (recent_avg_score / 2.0) * 100)  # Normalize to 0-100 scale
         
         return jsonify({
             'success': True,
@@ -353,7 +442,15 @@ def get_quality_distribution():
                 'low_quality': low_quality,
                 'high_percentage': round((high_quality / total) * 100, 1) if total > 0 else 0,
                 'medium_percentage': round((medium_quality / total) * 100, 1) if total > 0 else 0,
-                'low_percentage': round((low_quality / total) * 100, 1) if total > 0 else 0
+                'low_percentage': round((low_quality / total) * 100, 1) if total > 0 else 0,
+                'quality_trends': {
+                    'improving': quality_improving,
+                    'recent_avg_score': round(recent_avg_score, 3),
+                    'previous_avg_score': round(previous_avg_score, 3),
+                    'top_performers': top_performers,
+                    'quality_score': round(quality_score, 1),
+                    'analysis_period': '7 days'
+                }
             }
         })
         
@@ -587,6 +684,125 @@ def get_system_status():
                 'timestamp': datetime.now().isoformat()
             }
         })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/dashboard/stats', methods=['GET'])
+def get_dashboard_stats():
+    """Get comprehensive real-time dashboard statistics"""
+    try:
+        from storage.sqlite_storage import SQLiteStorage
+        from datetime import datetime, timedelta
+        import pandas as pd
+        
+        db_storage = SQLiteStorage(db_path="tweets.db")
+        tweets = db_storage.get_all_tweets()
+        
+        if not tweets:
+            return jsonify({
+                'success': True,
+                'data': {
+                    'overview': {
+                        'total_tweets': 0,
+                        'unique_users': 0,
+                        'avg_score': 0,
+                        'last_updated': datetime.now().isoformat()
+                    },
+                    'engagement': {
+                        'avg_likes': 0,
+                        'avg_retweets': 0,
+                        'avg_replies': 0,
+                        'avg_views': 0,
+                        'total_engagement': 0
+                    },
+                    'activity': {
+                        'last_24h_tweets': 0,
+                        'last_7d_tweets': 0,
+                        'trending_users': []
+                    },
+                    'quality': {
+                        'high_quality': 0,
+                        'medium_quality': 0,
+                        'low_quality': 0,
+                        'quality_score': 0
+                    }
+                }
+            })
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(tweets)
+        df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
+        df['created_at'] = df['created_at'].fillna(pd.Timestamp.now())
+        df['score'] = pd.to_numeric(df['score'], errors='coerce').fillna(0)
+        
+        # Overview stats
+        total_tweets = len(df)
+        unique_users = df['username'].nunique()
+        avg_score = df['score'].mean()
+        
+        # Engagement calculations
+        total_likes = sum(tweet.get('engagement', {}).get('likes', 0) for tweet in tweets)
+        total_retweets = sum(tweet.get('engagement', {}).get('retweets', 0) for tweet in tweets)
+        total_replies = sum(tweet.get('engagement', {}).get('replies', 0) for tweet in tweets)
+        
+        # Views with outlier filtering
+        views_data = [tweet.get('engagement', {}).get('views', 0) for tweet in tweets]
+        filtered_views = [v for v in views_data if v <= 10000]
+        avg_views = sum(filtered_views) / len(filtered_views) if filtered_views else 0
+        
+        # Recent activity
+        now = datetime.now()
+        last_24h = now - timedelta(hours=24)
+        last_7d = now - timedelta(days=7)
+        
+        recent_24h = df[df['created_at'] >= last_24h]
+        recent_7d = df[df['created_at'] >= last_7d]
+        
+        # Trending users
+        trending_users = recent_7d.groupby('username').size().sort_values(ascending=False).head(5)
+        trending_users_list = [{'username': user, 'tweet_count': int(count)} for user, count in trending_users.items()]
+        
+        # Quality distribution
+        high_quality = len(df[df['score'] >= 0.04])
+        low_quality = len(df[df['score'] <= 0.001])
+        medium_quality = total_tweets - high_quality - low_quality
+        
+        # Quality score
+        quality_score = min(100, (avg_score / 2.0) * 100)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'overview': {
+                    'total_tweets': total_tweets,
+                    'unique_users': int(unique_users),
+                    'avg_score': round(avg_score, 3),
+                    'last_updated': datetime.now().isoformat()
+                },
+                'engagement': {
+                    'avg_likes': round(total_likes / total_tweets, 1) if total_tweets > 0 else 0,
+                    'avg_retweets': round(total_retweets / total_tweets, 1) if total_tweets > 0 else 0,
+                    'avg_replies': round(total_replies / total_tweets, 1) if total_tweets > 0 else 0,
+                    'avg_views': round(avg_views, 1),
+                    'total_engagement': total_likes + total_retweets + total_replies
+                },
+                'activity': {
+                    'last_24h_tweets': len(recent_24h),
+                    'last_7d_tweets': len(recent_7d),
+                    'trending_users': trending_users_list
+                },
+                'quality': {
+                    'high_quality': high_quality,
+                    'medium_quality': medium_quality,
+                    'low_quality': low_quality,
+                    'quality_score': round(quality_score, 1)
+                }
+            }
+        })
+        
     except Exception as e:
         return jsonify({
             'success': False,
