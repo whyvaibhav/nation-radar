@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Enhanced Twitter API Fetcher using the working endpoint format
-Now with pagination and comprehensive tweet collection
+Efficient Twitter API Fetcher - Quality over Quantity
+Focused on relevant, high-quality content with minimal spam
 """
 
 import requests
@@ -18,7 +18,7 @@ class NewTwitterFetcher:
         
     def fetch(self, keyword: str) -> List[Dict[str, Any]]:
         """
-        Fetch tweets using enhanced collection with multiple strategies
+        Fetch tweets using focused, quality-oriented collection
         """
         all_tweets = []
         headers = {
@@ -26,8 +26,8 @@ class NewTwitterFetcher:
             "X-RapidAPI-Host": "twitter293.p.rapidapi.com"
         }
         
-        # Strategy 1: Multiple categories with pagination
-        categories = ["Top", "Latest", "Mixed"]
+        # Strategy 1: Focused categories only
+        categories = ["Top", "Latest"]  # Removed "Mixed" to reduce noise
         
         for category in categories:
             print(f"🔍 Fetching {category} tweets for keyword: {keyword}")
@@ -38,24 +38,14 @@ class NewTwitterFetcher:
             # Rate limiting between categories
             time.sleep(2)
         
-        # Strategy 2: Try different search variations for broader coverage
-        search_variations = self._generate_search_variations(keyword)
+        # Strategy 2: Limited, focused variations only
+        search_variations = self._generate_focused_variations(keyword)
         
         for variation in search_variations:
             print(f"🔍 Fetching tweets for variation: {variation}")
             variation_tweets = self._fetch_category_with_pagination(variation, "Latest", headers)
             all_tweets.extend(variation_tweets)
             print(f"✅ Found {len(variation_tweets)} tweets for variation '{variation}'")
-            time.sleep(2)
-        
-        # Strategy 3: Try different time-based searches
-        time_variations = self._generate_time_variations(keyword)
-        
-        for time_var in time_variations:
-            print(f"🔍 Fetching tweets for time variation: {time_var}")
-            time_tweets = self._fetch_category_with_pagination(time_var, "Latest", headers)
-            all_tweets.extend(time_tweets)
-            print(f"✅ Found {len(time_tweets)} tweets for time variation '{time_var}'")
             time.sleep(2)
         
         # Remove duplicates based on tweet ID
@@ -69,64 +59,86 @@ class NewTwitterFetcher:
         # Filter tweets by date (within lookback period)
         filtered_tweets = self._filter_tweets_by_date(tweets)
         
+        # Additional quality filtering
+        quality_tweets = self._filter_quality_content(filtered_tweets, keyword)
+        
         print(f"🎯 Total unique tweets for '{keyword}': {len(tweets)}")
         print(f"📅 Tweets within {self.days_lookback} days: {len(filtered_tweets)}")
+        print(f"✨ Quality tweets: {len(quality_tweets)}")
         
-        return filtered_tweets
+        return quality_tweets
     
-    def _generate_search_variations(self, keyword: str) -> List[str]:
+    def _generate_focused_variations(self, keyword: str) -> List[str]:
         """
-        Generate different search variations to get more tweets
+        Generate focused search variations to reduce noise
         """
         variations = []
         
-        # Basic variations
+        # Only use exact phrase matching for better quality
         if ' ' in keyword:
             # For multi-word keywords like "Crestal Network"
-            variations.extend([
-                f'"{keyword}"',  # Exact phrase
-                keyword.replace(' ', ' AND '),  # AND search
-                keyword.replace(' ', ' OR '),   # OR search
-            ])
+            variations.append(f'"{keyword}"')  # Exact phrase only
         else:
             # For single words like "Crestal"
-            variations.extend([
-                f'"{keyword}"',  # Exact phrase
-                f'{keyword}*',   # Wildcard search
-            ])
+            variations.append(f'"{keyword}"')  # Exact phrase only
         
-        # Remove duplicates and empty strings
-        return list(set([v for v in variations if v]))
-    
-    def _generate_time_variations(self, keyword: str) -> List[str]:
-        """
-        Generate time-based search variations
-        """
-        variations = []
-        
-        # Add time-based searches to get more recent tweets
-        time_filters = [
-            f'{keyword} since:2025-08-01',  # Since August 1st
-            f'{keyword} since:2025-07-25',  # Since July 25th
-            f'{keyword} since:2025-07-15',  # Since July 15th
-        ]
-        
-        variations.extend(time_filters)
         return variations
+    
+    def _filter_quality_content(self, tweets: List[Dict[str, Any]], keyword: str) -> List[Dict[str, Any]]:
+        """
+        Filter out low-quality, generic content
+        """
+        quality_tweets = []
+        
+        for tweet in tweets:
+            text = tweet.get('text', '').lower()
+            
+            # Skip if tweet is too short (likely spam)
+            if len(text) < 20:
+                continue
+            
+            # Skip if tweet contains common spam indicators
+            spam_indicators = [
+                'follow me', 'retweet', 'like', 'dm me', 'send me',
+                'airdrop', 'free', 'claim', 'moon', 'pump', '100x',
+                '🚀', '💎', '🔥', '📈', '💰'
+            ]
+            
+            if any(indicator in text for indicator in spam_indicators):
+                continue
+            
+            # Skip if tweet is mostly hashtags
+            hashtag_count = text.count('#')
+            if hashtag_count > 5:
+                continue
+            
+            # Skip if tweet is mostly mentions
+            mention_count = text.count('@')
+            if mention_count > 3:
+                continue
+            
+            # Ensure keyword relevance
+            keyword_lower = keyword.lower().replace('$', '').replace('"', '')
+            if keyword_lower not in text and keyword_lower.replace(' ', '') not in text:
+                continue
+            
+            quality_tweets.append(tweet)
+        
+        return quality_tweets
     
     def _fetch_category_with_pagination(self, keyword: str, category: str, headers: Dict) -> List[Dict[str, Any]]:
         """
-        Fetch tweets for a specific category with pagination
+        Fetch tweets for a specific category with limited pagination
         """
         tweets = []
-        max_requests = 8  # Increased to 8 requests per category
+        max_requests = 3  # Reduced to 3 requests per category for efficiency
         cursor = None
         
         for request_num in range(max_requests):
             try:
                 url = f"{self.base_url}/search/{keyword}"
                 params = {
-                    "count": "100",  # Request 100 tweets per request
+                    "count": "50",  # Reduced to 50 tweets per request
                     "category": category
                 }
                 
