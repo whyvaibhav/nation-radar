@@ -2,4 +2,5 @@ keywords:
   - Crestal
   - Crestal Network
   - Nation.fun
-days_lookback: 7
+  - $NATION
+days_lookback: 21

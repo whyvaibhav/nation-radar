@@ -16,9 +16,18 @@ GOOGLE_SHEETS_CREDENTIALS = os.getenv('GOOGLE_SHEETS_CREDENTIALS', 'credentials.
 RAPIDAPI_KEY = os.getenv('RAPIDAPI_KEY', 'YOUR_RAPIDAPI_KEY')
 NATION_AGENT_API_KEY = os.getenv('NATION_AGENT_API_KEY', 'YOUR_NATION_AGENT_API_KEY')
 
-# Config values from YAML
-KEYWORDS = config.get('keywords', [])
-DAYS_LOOKBACK = int(config.get('days_lookback', 7))
+# Configuration for Nation Radar Pipeline
+
+# Keywords to search for
+KEYWORDS = [
+    "Crestal",
+    "Crestal Network", 
+    "Nation.fun",
+    "$NATION"
+]
+
+# How many days back to search
+DAYS_LOOKBACK = 21
 # CSV_FILENAME removed - using SQLite database instead
 
 # Other settings
